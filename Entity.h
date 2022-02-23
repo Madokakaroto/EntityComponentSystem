@@ -89,7 +89,6 @@ namespace ecs
 
     struct entity_hash_t
     {
-        // TODO ... constexpr hash
         [[nodiscard]] size_t operator() (entity_t const& entity) const noexcept
         {
             return std::hash<entity_t::value_type>{}(entity.value());

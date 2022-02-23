@@ -1,0 +1,3 @@
+[submodule "dependencies/pfr"]
+	path = dependencies/pfr
+	url = https://github.com/boostorg/pfr
