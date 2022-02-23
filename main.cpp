@@ -3,11 +3,15 @@
 #include <limits>
 #include <compare>
 #include <iostream>
+#include <memory>
+#include <vector>
+#include <array>
 #include "boost/pfr.hpp"
 #include "Forward.hpp"
 #include "Hash.hpp"
 #include "Handle.hpp"
-#include "Entity.h"
+#include "Entity.hpp"
+#include "Types.h"
 
 int main(void)
 {
