@@ -11,7 +11,7 @@
 #include "Hash.hpp"
 #include "Handle.hpp"
 #include "Entity.hpp"
-#include "Types.h"
+#include "Types.hpp"
 
 int main(void)
 {

@@ -61,29 +61,29 @@ namespace ecs
             return is_valid();
         }
 
-        [[nodiscard]] constexpr handle_type handle() const noexcept
+        [[nodiscard]] constexpr handle_type get_handle() const noexcept
         {
             return composed_value_.handle;
         }
 
-        [[nodiscard]] constexpr entity_tag tag() const noexcept
+        [[nodiscard]] constexpr entity_tag get_tag() const noexcept
         {
             return composed_value_.tag;
         }
 
-        [[nodiscard]] constexpr entity_version version() const noexcept
+        [[nodiscard]] constexpr entity_version get_version() const noexcept
         {
             return composed_value_.version;
         }
 
-        [[nodiscard]] constexpr value_type value() const noexcept
+        [[nodiscard]] constexpr value_type get_value() const noexcept
         {
             return value_;
         }
 
         [[nodiscard]] explicit constexpr operator value_type() const noexcept
         {
-            return value();
+            return get_value();
         }
     };
 
@@ -91,7 +91,7 @@ namespace ecs
     {
         [[nodiscard]] size_t operator() (entity_t const& entity) const noexcept
         {
-            return std::hash<entity_t::value_type>{}(entity.value());
+            return std::hash<entity_t::value_type>{}(entity.get_value());
         }
     };
 }

@@ -9,11 +9,12 @@ namespace ecs
 
     inline constexpr uint32_t murmur_get_block(char const* p, int i)
     {
-        uint32_t block = 
-		static_cast<uint32_t>(p[0+i*4]) << 0  | 
-		static_cast<uint32_t>(p[1+i*4]) << 8  | 
-		static_cast<uint32_t>(p[2+i*4]) << 16 | 
-		static_cast<uint32_t>(p[3+i*4]) << 24;
+        uint32_t const offset = i * 4;
+        uint32_t const block = 
+		static_cast<uint32_t>(p[offset + 0]) << 0  | 
+		static_cast<uint32_t>(p[offset + 1]) << 8  | 
+		static_cast<uint32_t>(p[offset + 2]) << 16 | 
+		static_cast<uint32_t>(p[offset + 3]) << 24;
 	    return block;
     }
 
