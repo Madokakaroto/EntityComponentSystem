@@ -33,7 +33,7 @@ namespace ecs
             return value_;
         }
 
-        [[nodiscard]] constexpr underlying_type value() const noexcept
+        [[nodiscard]] constexpr underlying_type get_value() const noexcept
         {
             return value_;
         }
