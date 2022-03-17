@@ -5,10 +5,10 @@ namespace ecs
     class entity_t
     {
     public:
-        using value_type = std::uint64_t;
-        using entity_tag = std::uint16_t;
-        using entity_version = std::uint16_t;
-        using handle_type = handle<entity_t, std::uint32_t>;
+        using value_type = uint64_t;
+        using entity_tag = uint16_t;
+        using entity_version = uint16_t;
+        using handle_type = handle<entity_t, uint32_t>;
 
         struct compose_type
         {
