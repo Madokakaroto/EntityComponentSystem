@@ -4,7 +4,11 @@ project(ECS)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
+
+if(MSVC)
+    set(CMAKE_CXX20_STANDARD_COMPILE_OPTION "-std:c++latest")
+    set(CMAKE_CXX20_EXTENSION_COMPILE_OPTION "-std:c++latest")
+endif()
 
 set(ECS_SOURCES
 	main.cpp)
