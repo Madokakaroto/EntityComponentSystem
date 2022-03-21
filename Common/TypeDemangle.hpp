@@ -4,6 +4,10 @@
 #include <string_view>
 #include <algorithm>
 
+#ifndef _MSC_VER
+#include <cxxabi.h>
+#endif
+
 namespace ecs
 {
 #ifdef _MSC_VER
