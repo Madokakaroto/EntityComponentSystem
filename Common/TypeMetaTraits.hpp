@@ -16,8 +16,8 @@ namespace ecs
             std::negation<std::is_const<T>>,
             std::negation<std::is_volatile<T>>,
             std::negation<std::is_function<T>>,
-            std::negation<std::is_void<T>>,
-            std::negation<TIsCharArray<T>>
+            std::negation<std::is_void<T>>/*
+            std::negation<is_char_array<T>>*/
             >, "Type not Supported!"
         );
 
