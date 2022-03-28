@@ -47,7 +47,7 @@ namespace ecs
     concept pointer_of = is_pointer_of_v<T, P>;
 
     template <typename T>
-    using is_cstring = std::conjunction<
+    using is_cstring = std::disjunction<
         is_pointer_of<T, char>,
         is_pointer_of<T, wchar_t>,
         is_pointer_of<T, char8_t>,
@@ -70,4 +70,25 @@ namespace ecs
     constexpr bool is_std_string_v = std_string<T>;
     template <typename T>
     using is_std_string = std::bool_constant<is_std_string_v<T>>;
+
+    template <typename T, typename ... Args>
+    using is_among_types = std::disjunction<std::is_same<T, Args>...>;
+    template <typename T, typename ... Args>
+    constexpr bool is_among_types_v = is_among_types<T, Args...>::value;
+    template <typename T, typename ... Args>
+    concept among_types = is_among_types_v<T, Args...>;
+
+    template <typename T>
+    using is_char_array = std::conjunction<
+        std::is_array<T>,
+        is_among_types<T, char, wchar_t, char8_t, char16_t, char32_t>,
+        std::bool_constant<std::rank_v<T> == 1>
+    >;
+    template <typename T>
+    constexpr bool is_char_array_v = is_char_array<T>::value;
+    template <typename T>
+    concept char_array = is_char_array_v<T>;
+
+    template <typename T>
+    concept enumerable = std::is_enum_v<T>;
 }
