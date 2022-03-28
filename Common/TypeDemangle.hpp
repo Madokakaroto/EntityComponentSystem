@@ -21,7 +21,7 @@ namespace ecs
 #endif
 
     template <typename T>
-    inline std::string demangle_name()
+    inline std::string get_demangle_name()
     {
         decltype(auto) type_info = typeid(T);
 #if defined(_MSC_VER)

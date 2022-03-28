@@ -78,13 +78,28 @@ namespace ecs
     }
 
     template <size_t Length>
-    inline constexpr uint32_t static_murmur_hash_x86_32(char const(&arr)[Length], uint32_t const seed)
+    inline constexpr uint32_t murmur_hash_x86_32(char const(&arr)[Length], uint32_t const seed)
     {
         return murmurhash3_x86_32_impl(arr, Length - 1, seed);
     }
 
-    inline uint32_t dynamic_murmur_hash_x86_32(char const* arr, int const len, uint32_t const seed)
+    inline uint32_t murmur_hash_x86_32(char const* arr, int const len, uint32_t const seed)
     {
         return murmurhash3_x86_32_impl(arr, len, seed);
+    }
+
+    template <size_t Length>
+    inline constexpr uint32_t hash_memory(char const(&arr)[Length])
+    {
+        // hex from of 'x' 'e' 'c' 's'
+        constexpr uint32_t ecs_seed = 0x78656373;
+        return murmur_hash_x86_32(arr, ecs_seed);
+    }
+
+    inline uint32_t hash_memory(char const* arr, int const len)
+    {
+        // hex from of 'x' 'e' 'c' 's'
+        constexpr uint32_t ecs_seed = 0x78656373;
+        return murmur_hash_x86_32(arr, len, ecs_seed);
     }
 }

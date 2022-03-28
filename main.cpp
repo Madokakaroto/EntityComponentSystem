@@ -18,12 +18,12 @@ int main(void)
 
 	std::cout << "hello ecs" << std::endl;
 
-	static_assert(ecs::static_murmur_hash_x86_32("hello ecs", 0x453627) != 0);
+	static_assert(ecs::murmur_hash_x86_32("hello ecs", 0x453627) != 0);
 
-	std::cout << ecs::demangle_name<int>() << std::endl;
-	std::cout << ecs::demangle_name<std::string>() << std::endl;
-	std::cout << ecs::demangle_name<foo>() << std::endl;
-	std::cout << ecs::demangle_name<fee>() << std::endl;
+	std::cout << ecs::get_demangle_name<int>() << std::endl;
+	std::cout << ecs::get_demangle_name<std::string>() << std::endl;
+	std::cout << ecs::get_demangle_name<foo>() << std::endl;
+	std::cout << ecs::get_demangle_name<fee>() << std::endl;
 
 	return 0;
 }
