@@ -1,11 +1,9 @@
 
 #include "Forward.hpp"
 
+#include "Types.hpp"
 #include "Common.hpp"
 
-#include "Handle.hpp"
-#include "Entity.hpp"
-#include "Types.hpp"
 
 struct foo {};
 

@@ -86,12 +86,4 @@ namespace ecs
             return get_value();
         }
     };
-
-    struct entity_hash_t
-    {
-        [[nodiscard]] size_t operator() (entity_t const& entity) const noexcept
-        {
-            return std::hash<entity_t::value_type>{}(entity.get_value());
-        }
-    };
 }

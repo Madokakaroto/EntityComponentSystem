@@ -11,7 +11,7 @@
 namespace ecs
 {
 #ifdef _MSC_VER
-    constexpr std::array<std::string_view, 4> msvc_typename_decorator
+    inline constexpr std::array<std::string_view, 4> msvc_typename_decorator
     {{
         "struct ",
         "class ",
@@ -21,7 +21,7 @@ namespace ecs
 #endif
 
     template <typename T>
-    inline std::string get_demangle_name()
+    [[nodiscard]] inline std::string get_demangle_name()
     {
         decltype(auto) type_info = typeid(T);
 #if defined(_MSC_VER)

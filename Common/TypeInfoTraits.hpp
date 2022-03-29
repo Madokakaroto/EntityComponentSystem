@@ -11,20 +11,38 @@ namespace ecs
     {
         using type = T;
 
-        static std::string get_type_name()
+        [[nodiscard]] static std::string get_type_name()
         {
             return get_demangle_name<type>();
         }
 
-        static constexpr size_t get_field_count() noexcept
+        [[nodiscard]] static constexpr size_t get_field_count() noexcept
         {
             return size_t{ 0 };
         }
 
-        static uint32_t get_hash()
+        [[nodiscard]] static uint32_t get_hash()
         {
             auto const type_name = type::get_type_name();
             return hash_memory(type_name.c_str(), type_name.length());
+        }
+
+        [[nodiscard]] static auto get_vtable() noexcept -> archetype_vtable_t
+        {
+            archetype_vtable_t vtable = { nullptr, nullptr, nullptr, nullptr };
+
+            if constexpr(std::negation_v<std::is_trivially_constructible<T>>)
+            {
+                vtable.constructor = [](void* addr) { new (addr) T{}; };
+            }
+
+            if constexpr(std::negation_v<std::is_trivially_destructible<T>>)
+            {
+                vtable.destructor = [](void* addr) { reinterpret_cast<T*>(addr)->~T(); };
+                vtable.copy_func = [](void* dst, void const* src) { *reinterpret_cast<T*>(dst) = *reinterpret_cast<T const*>(src); };
+                vtable.swap_func = [](void* lhs, void* rhs) { std::swap(*reinterpret_cast<T*>(lhs), *reinterpret_cast<T*>(rhs)); };
+                vtable.move_func = [](void* dst, void* src) { *reinterpret_cast<T*>(dst) = std::move(*reinterpret_cast<T const*>(src)); };
+            }
         }
     };
 
@@ -53,7 +71,7 @@ namespace ecs
     struct type_info_traits<CppType> : primative_type_info_traits<CppType>  \
     {                                                                       \
         using type = typename primative_type_info_traits<CppType>::type;    \
-        static std::string get_type_name()                                  \
+        [[nodiscard]] static std::string get_type_name()                    \
         {                                                                   \
             return #TypeName;                                               \
         }                                                                   \
