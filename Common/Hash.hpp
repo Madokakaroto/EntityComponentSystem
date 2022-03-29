@@ -2,12 +2,12 @@
 
 namespace ecs
 {
-    inline constexpr uint32_t murmur_rotl(uint32_t x, int8_t r) noexcept
+    [[nodiscard]] constexpr uint32_t murmur_rotl(uint32_t x, int8_t r) noexcept
     {
         return (x << r) | (x >> (32 - r));
     }
 
-    inline constexpr uint32_t murmur_get_block(char const* p, int i)
+    [[nodiscard]] constexpr uint32_t murmur_get_block(char const* p, int i)
     {
         uint32_t const offset = i * 4;
         uint32_t const block = 
@@ -18,7 +18,7 @@ namespace ecs
 	    return block;
     }
 
-    inline constexpr uint32_t murmur_fmix(uint32_t const h) noexcept
+    [[nodiscard]] constexpr uint32_t murmur_fmix(uint32_t const h) noexcept
     {
         uint32_t result = h;
         result ^= result >> 16;
@@ -29,7 +29,7 @@ namespace ecs
         return result;
     }
 
-    inline constexpr uint32_t murmurhash3_x86_32_impl(char const* key, int const len, uint32_t const seed)
+    [[nodiscard]] constexpr uint32_t murmurhash3_x86_32_impl(char const* key, int const len, uint32_t const seed)
     {
         int const nblocks = len / 4;
 
@@ -78,25 +78,25 @@ namespace ecs
     }
 
     template <size_t Length>
-    inline constexpr uint32_t murmur_hash_x86_32(char const(&arr)[Length], uint32_t const seed)
+    [[nodiscard]] constexpr uint32_t murmur_hash_x86_32(char const(&arr)[Length], uint32_t const seed)
     {
         return murmurhash3_x86_32_impl(arr, Length - 1, seed);
     }
 
-    inline uint32_t murmur_hash_x86_32(char const* arr, int const len, uint32_t const seed)
+    [[nodiscard]] inline uint32_t murmur_hash_x86_32(char const* arr, int const len, uint32_t const seed)
     {
         return murmurhash3_x86_32_impl(arr, len, seed);
     }
 
     template <size_t Length>
-    inline constexpr uint32_t hash_memory(char const(&arr)[Length])
+    [[nodiscard]] constexpr uint32_t hash_memory(char const(&arr)[Length])
     {
         // hex from of 'x' 'e' 'c' 's'
         constexpr uint32_t ecs_seed = 0x78656373;
         return murmur_hash_x86_32(arr, ecs_seed);
     }
 
-    inline uint32_t hash_memory(char const* arr, int const len)
+    [[nodiscard]] inline uint32_t hash_memory(char const* arr, int const len)
     {
         // hex from of 'x' 'e' 'c' 's'
         constexpr uint32_t ecs_seed = 0x78656373;
