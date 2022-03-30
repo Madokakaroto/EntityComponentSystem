@@ -66,11 +66,11 @@ namespace ecs
         using type = typename primative_type_info_traits<T>::type;
     };
 
-    #define ECS_IMPLEMENT_PRIMATIVE_TYPE(CppType, TypeName)                 \
+    #define ECS_IMPLEMENT_PRIMATIVE_TYPE(Type, TypeName)                    \
     template <>                                                             \
-    struct type_info_traits<CppType> : primative_type_info_traits<CppType>  \
+    struct type_info_traits<Type> : primative_type_info_traits<Type>        \
     {                                                                       \
-        using type = typename primative_type_info_traits<CppType>::type;    \
+        using type = typename primative_type_info_traits<Type>::type;       \
         [[nodiscard]] static std::string get_type_name()                    \
         {                                                                   \
             return #TypeName;                                               \
@@ -86,4 +86,60 @@ namespace ecs
     ECS_IMPLEMENT_PRIMATIVE_TYPE(sint32_t, sint32);
     ECS_IMPLEMENT_PRIMATIVE_TYPE(float, float);
     ECS_IMPLEMENT_PRIMATIVE_TYPE(double, double);
+    ECS_IMPLEMENT_PRIMATIVE_TYPE(string, std::string);
+    ECS_IMPLEMENT_PRIMATIVE_TYPE(wstring, std::wstring);
+    ECS_IMPLEMENT_PRIMATIVE_TYPE(u8string, std::u8string);
+    ECS_IMPLEMENT_PRIMATIVE_TYPE(u16string, std::u16string);
+    ECS_IMPLEMENT_PRIMATIVE_TYPE(u32string, std::u32string);
+
+    template <typename T, size_t Size>
+    struct type_info_traits<std::array<T, Size>> : 
+        primative_type_info_traits<std::array<T, Size>>
+    {
+        using type = typename primative_type_info_traits<std::array<T, Size>>::type;
+
+        [[nodiscard]] static std::string get_type_name()
+        {
+            using value_type_info = type_info_traits<T>;
+            return std::format("std::array<{}, {}>", value_type_info::get_type_name(), Size);
+        }
+    };
+
+    template <typename T>
+    struct type_info_traits<vector<T>> : primative_type_info_traits<vector<T>>
+    {
+        using type = typename primative_type_info_traits<vector<T>>::type;
+
+        [[nodiscard]] static std::string get_type_name()
+        {
+            using value_type_info = type_info_traits<T>;
+            return std::format("std::vector<{}>", value_type_info::get_type_name());
+        }
+    };
+
+    template <typename Key, typename Value>
+    struct type_info_traits<map<Key, Value>> : primative_type_info_traits<map<Key, Value>>
+    {
+        using type = typename primative_type_info_traits<map<Key, Value>>::type;
+
+        [[nodiscard]] static std::string get_type_name()
+        {
+            using key_type_info = type_info_traits<Key>;
+            using value_type_info = type_info_traits<Value>;
+            return std::format("std::map<{}, {}>", key_type_info::get_type_info(), value_type_info::get_type_name());
+        }
+    };
+
+    template <typename Key, typename Value>
+    struct type_info_traits<unordered_map<Key, Value>> : primative_type_info_traits<unordered_map<Key, Value>>
+    {
+        using type = typename primative_type_info_traits<unordered_map<Key, Value>>::type;
+
+        [[nodiscard]] static std::string get_type_name()
+        {
+            using key_type_info = type_info_traits<Key>;
+            using value_type_info = type_info_traits<Value>;
+            return std::format("std::unordered_map<{}, {}>", key_type_info::get_type_info(), value_type_info::get_type_name());
+        }
+    };
 }
