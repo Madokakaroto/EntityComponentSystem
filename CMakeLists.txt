@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 
 project(ECS)
 
@@ -11,12 +11,14 @@ if(MSVC)
 endif()
 
 set(ECS_SOURCES
+    src/Meta.cpp
 	main.cpp)
 
 set(DEPENDENCIES_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
 
 include_directories(
 	${DEPENDENCIES_DIRECTORY}/pfr/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 add_executable(ECS ${ECS_SOURCES})

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <type_traits>
+
 // std extension
 namespace std
 {

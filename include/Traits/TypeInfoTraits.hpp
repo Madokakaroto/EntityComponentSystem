@@ -1,8 +1,9 @@
 #pragma once
 
-#include <type_traits>
 #include <format>
-#include "TypeTraitsExt.hpp"
+#include "Traits/TypeTraitsExt.hpp"
+#include "Utils/TypeDemangle.hpp"
+#include "Utils/Hash.hpp"
 
 namespace ecs
 {

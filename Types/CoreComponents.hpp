@@ -2,12 +2,12 @@
 
 namespace ecs
 {
-    struct data_component_tag {};
-    struct shared_component_tag {};
+    struct data_comp_tag {};        // tag type for data component
+    struct cow_comp_tag {};         // tag type for copy-on-write component
 
     struct entity_component
     {
-        using component_tag = data_component_tag;
+        using component_tag = data_comp_tag;
 
         entity_t handle;
     };

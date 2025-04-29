@@ -1,12 +1,6 @@
-
-#include "Forward.hpp"
-
-#include "Types.hpp"
-#include "Common.hpp"
-
+#include "ECS.h"
 
 struct foo {};
-
 class fee {};
 
 int main(void)

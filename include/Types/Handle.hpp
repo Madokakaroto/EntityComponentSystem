@@ -1,5 +1,8 @@
 #pragma once
 
+#include <limits>
+#include <concepts>
+
 namespace ecs
 {
     template <typename Tag, std::integral T>

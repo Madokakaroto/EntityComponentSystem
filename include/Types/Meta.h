@@ -1,0 +1,95 @@
+#pragma once
+
+#include "Types/Forward.hpp"
+#include "Types/Handle.hpp"
+
+namespace ecs
+{
+    constexpr uint32_t invalid_offset = (std::numeric_limits<uint32_t>::max)();
+    constexpr uint32_t invalid_size = (std::numeric_limits<uint32_t>::max)();;
+
+    union type_hash_t
+    {
+        struct
+        {
+            uint32_t value1;
+            uint32_t value2;
+        }        components;
+        uint64_t value;
+    };
+
+    constexpr bool operator==(type_hash_t const& lhs, type_hash_t const& rhs) noexcept
+    {
+        return lhs.value == rhs.value;
+    }
+
+    constexpr bool operator!=(type_hash_t const& lhs, type_hash_t const& rhs) noexcept
+    {
+        return lhs.value != rhs.value;
+    }
+
+    struct type_vtable_t
+    {
+        void(*constructor)(void*);
+        void(*destructor)(void*);
+        void(*copy_func)(void*, void const*);
+        void(*swap_func)(void*, void*);
+        void(*move_func)(void*, void*);
+    };
+
+    // chunk is a list of chained memroy block, where the data is actually placed
+    struct chunk_t;
+
+    // archetype is a combination of serveral unique component
+    struct archetype_t;
+
+    // runtime information about a cpp type
+    struct type_info_t;
+
+    // runtime information about a member in a specific cpp type
+    struct field_info_t;
+
+    // runtime information about an entity component
+    struct component_info_t;
+
+    // a group of entity components
+    struct component_group_t;
+}
+
+// interfaces for type_info_t
+namespace ecs
+{
+    // create type info
+    type_info_t* create_type_info(uint32_t size, uint32_t alignment, char const* type_name, type_hash_t type_hash, type_vtable_t const& type_vtable, uint32_t field_count);
+
+    // delete type info
+    void delete_type_info(type_info_t* type_info);
+
+    // get size
+    uint32_t get_size(type_info_t* type_info);
+
+    // get alignment
+    uint32_t get_align(type_info_t* type_info);
+
+    // get type name
+    char const* get_name(type_info_t* type_info);
+
+    // get type hash
+    type_hash_t get_hash(type_info_t* type_info);
+
+    // get field count
+    uint32_t get_field_count(type_info_t* type_info);
+
+    // get field info
+    field_info_t* get_field_info(type_info_t* type_info, size_t field_index);
+}
+
+
+// interfaces for field_info_t
+namespace ecs
+{
+    void set_field_type(field_info_t* field_info, type_info_t* field_type);
+    void set_field_offset(field_info_t* field_info, uint32_t field_offset);
+    type_info_t* get_field_type(field_info_t* field_info);
+    uint32_t get_field_offset(field_info_t* field_info);
+}

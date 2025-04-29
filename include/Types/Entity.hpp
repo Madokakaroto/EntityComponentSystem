@@ -1,5 +1,8 @@
 #pragma once
 
+#include <compare>
+#include "Types/Handle.hpp"
+
 namespace ecs
 {
     class entity_t
