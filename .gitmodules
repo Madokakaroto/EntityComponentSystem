@@ -1,3 +1,6 @@
 [submodule "dependencies/pfr"]
 	path = dependencies/pfr
 	url = https://github.com/boostorg/pfr
+[submodule "dependencies/async_simple"]
+	path = dependencies/async_simple
+	url = https://github.com/alibaba/async_simple.git

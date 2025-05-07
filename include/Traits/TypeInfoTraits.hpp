@@ -4,6 +4,7 @@
 #include "Traits/TypeTraitsExt.hpp"
 #include "Utils/TypeDemangle.hpp"
 #include "Utils/Hash.hpp"
+#include "Types/Meta.h"
 
 namespace ecs
 {
@@ -28,9 +29,9 @@ namespace ecs
             return hash_memory(type_name.c_str(), type_name.length());
         }
 
-        [[nodiscard]] static auto get_vtable() noexcept -> archetype_vtable_t
+        [[nodiscard]] static auto get_vtable() noexcept -> type_hash_t
         {
-            archetype_vtable_t vtable = { nullptr, nullptr, nullptr, nullptr };
+            type_hash_t vtable = { nullptr, nullptr, nullptr, nullptr, nullptr };
 
             if constexpr(std::negation_v<std::is_trivially_constructible<T>>)
             {

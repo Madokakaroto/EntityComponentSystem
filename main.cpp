@@ -1,7 +1,14 @@
 #include "ECS.h"
+#include "async_simple/coro/Lazy.h"
+#include "async_simple/coro/SyncAwait.h"
 
 struct foo {};
 class fee {};
+
+async_simple::coro::Lazy<int> get_43() {
+	std::cout << "run with ::operator new/delete" << '\n';
+	co_return 43;
+}
 
 int main(void)
 {
@@ -16,6 +23,8 @@ int main(void)
 	std::cout << ecs::get_demangle_name<std::string>() << std::endl;
 	std::cout << ecs::get_demangle_name<foo>() << std::endl;
 	std::cout << ecs::get_demangle_name<fee>() << std::endl;
+
+	syncAwait(get_43());
 
 	return 0;
 }
