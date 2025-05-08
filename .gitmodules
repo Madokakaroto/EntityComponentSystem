@@ -1,3 +1,12 @@
 [submodule "dependencies/async_simple"]
 	path = dependencies/async_simple
 	url = https://github.com/alibaba/async_simple.git
+[submodule "dependencies/boost/preprocessor"]
+	path = dependencies/boost/preprocessor
+	url = https://github.com/boostorg/preprocessor.git
+[submodule "dependencies/boost/pfr"]
+	path = dependencies/boost/pfr
+	url = https://github.com/boostorg/pfr.git
+[submodule "dependencies/asio"]
+	path = dependencies/asio
+	url = https://github.com/chriskohlhoff/asio.git

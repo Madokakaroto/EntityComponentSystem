@@ -17,7 +17,9 @@ set(PK_SOURCE
 set(DEPENDENCIES_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/dependencies)
 
 include_directories(
-	${DEPENDENCIES_DIRECTORY}/pfr/include
+	${DEPENDENCIES_DIRECTORY}/boost/pfr/include
+    ${DEPENDENCIES_DIRECTORY}/boost/preprocessor/include
+    ${DEPENDENCIES_DIRECTORY}/asio/asio/include
     ${DEPENDENCIES_DIRECTORY}/async_simple
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
