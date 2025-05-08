@@ -36,6 +36,7 @@ int main(void)
 
 
     static_assert(boost::pfr::tuple_size_v<bar> == 1);
+    static_assert(!punk::reflected<foo>);
 
     return 0;
 }

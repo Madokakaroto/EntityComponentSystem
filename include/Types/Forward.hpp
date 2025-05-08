@@ -19,8 +19,6 @@
 #include <format>
 #include <memory_resource>
 
-#include "boost/pfr.hpp"
-
 namespace punk
 {
     // arithmetic types
