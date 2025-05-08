@@ -4,7 +4,7 @@
 #include "CoreTypes.h"
 #include "Utils/Hash.hpp"
 
-namespace ecs
+namespace punk
 {
     // create type info
     type_info_t* create_type_info(char const* type_name, uint32_t size, uint32_t alignment, type_vtable_t const& type_vtable, uint32_t field_count)
@@ -88,7 +88,7 @@ namespace ecs
     }
 }
 
-namespace ecs
+namespace punk
 {
     void set_field_type(field_info_t* field_info, type_info_t* field_type)
     {
@@ -117,7 +117,7 @@ namespace ecs
     }
 }
 
-namespace ecs
+namespace punk
 {
     class runtime_type_system_impl : public runtime_type_system
     {

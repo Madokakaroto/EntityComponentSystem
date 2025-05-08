@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ecs
+namespace punk
 {
     enum class error_code
     {

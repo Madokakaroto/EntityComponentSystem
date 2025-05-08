@@ -2,10 +2,10 @@
 
 #include "Meta.h"
 
-namespace ecs
+namespace punk
 {
     // runtime type system manages all runtime information about types, components, component groups & archetypes
-    class  runtime_type_system
+    class runtime_type_system
     {
     public:
         virtual ~runtime_type_system() = default;

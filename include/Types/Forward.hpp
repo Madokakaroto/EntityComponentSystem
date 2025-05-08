@@ -21,7 +21,7 @@
 
 #include "boost/pfr.hpp"
 
-namespace ecs
+namespace punk
 {
     // arithmetic types
     using uint8_t  = std::uint8_t;

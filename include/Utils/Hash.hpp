@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ecs
+namespace punk
 {
     [[nodiscard]] constexpr uint32_t murmur_rotl(uint32_t x, int8_t r) noexcept
     {

@@ -8,7 +8,7 @@
 #include <cxxabi.h>
 #endif
 
-namespace ecs
+namespace punk
 {
 #ifdef _MSC_VER
     inline constexpr std::array<std::string_view, 4> msvc_typename_decorator

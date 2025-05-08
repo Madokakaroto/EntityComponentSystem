@@ -6,7 +6,7 @@
 #include "Utils/Hash.hpp"
 #include "Types/Meta.h"
 
-namespace ecs
+namespace punk
 {
     // generic traits implementation
     template <typename T>
@@ -14,7 +14,7 @@ namespace ecs
 }
 
 // for primative types
-namespace ecs
+namespace punk
 {
     template <typename T>
     struct primative_type_info_traits
@@ -56,7 +56,7 @@ namespace ecs
         }
     };
 
-    #define ECS_IMPLEMENT_PRIMATIVE_TYPE(Type, TypeName)                    \
+    #define PUNK_IMPLEMENT_PRIMATIVE_TYPE(Type, TypeName)                    \
     template <>                                                             \
     struct type_info_traits<Type> : primative_type_info_traits<Type>        \
     {                                                                       \
@@ -67,20 +67,20 @@ namespace ecs
         }                                                                   \
     }
 
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(bool, bool);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(uint8_t, uint8);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(sint8_t, sint8);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(uint16_t, uint16);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(sint16_t, sint16);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(uint32_t, uint32);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(sint32_t, sint32);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(float, float);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(double, double);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(string, std::string);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(wstring, std::wstring);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(u8string, std::u8string);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(u16string, std::u16string);
-    ECS_IMPLEMENT_PRIMATIVE_TYPE(u32string, std::u32string);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(bool, bool);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(uint8_t, uint8);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(sint8_t, sint8);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(uint16_t, uint16);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(sint16_t, sint16);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(uint32_t, uint32);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(sint32_t, sint32);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(float, float);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(double, double);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(string, std::string);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(wstring, std::wstring);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(u8string, std::u8string);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(u16string, std::u16string);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(u32string, std::u32string);
 
     template <typename T, size_t Size>
     struct type_info_traits<std::array<T, Size>> : 
@@ -135,8 +135,8 @@ namespace ecs
 }
 
 // for reflectible types
-namespace ecs
+namespace punk
 {
-    template <typename T>
-    struct is_tuple
+    //template <typename T>
+    //struct is_tuple
 }

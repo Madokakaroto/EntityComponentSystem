@@ -3,7 +3,7 @@
 #include "Types/Forward.hpp"
 #include "Types/Handle.hpp"
 
-namespace ecs
+namespace punk
 {
     constexpr uint32_t invalid_offset = (std::numeric_limits<uint32_t>::max)();
     constexpr uint32_t invalid_size = (std::numeric_limits<uint32_t>::max)();;
@@ -58,7 +58,7 @@ namespace ecs
 
 /// TODO ... not all the interfaces below are public, hide the implementation specific ones
 // interfaces for type_info_t
-namespace ecs
+namespace punk
 {
     // create type info
     type_info_t* create_type_info(char const* type_name, uint32_t size, uint32_t alignment, type_vtable_t const& type_vtable, uint32_t field_count);
@@ -90,7 +90,7 @@ namespace ecs
 }
 
 // interfaces for field_info_t
-namespace ecs
+namespace punk
 {
     // set the type of the field
     void set_field_type(field_info_t* field_info, type_info_t* field_type);

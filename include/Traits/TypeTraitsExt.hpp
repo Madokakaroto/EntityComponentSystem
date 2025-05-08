@@ -11,7 +11,7 @@ namespace std
     using disable_if_t = typename disable_if<Test, T>::type;
 }
 
-namespace ecs
+namespace punk
 {
     template <typename T>
     using element_type_t = typename T::element_type;
@@ -21,7 +21,7 @@ namespace ecs
 }
 
 // boolean meta-functions
-namespace ecs
+namespace punk
 {
     template <typename T>
     struct is_bool : std::is_same<std::remove_cv_t<T>, bool> {};

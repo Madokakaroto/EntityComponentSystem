@@ -1,6 +1,6 @@
 #pragma once
 
-namespace ecs
+namespace punk
 {
     struct data_comp_tag {};        // tag type for data component
     struct cow_comp_tag {};         // tag type for copy-on-write component

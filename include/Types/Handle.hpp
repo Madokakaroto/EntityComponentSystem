@@ -3,7 +3,7 @@
 #include <limits>
 #include <concepts>
 
-namespace ecs
+namespace punk
 {
     template <typename Tag, std::integral T>
     struct handle

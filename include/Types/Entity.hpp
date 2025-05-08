@@ -3,7 +3,7 @@
 #include <compare>
 #include "Types/Handle.hpp"
 
-namespace ecs
+namespace punk
 {
     class entity_t
     {
