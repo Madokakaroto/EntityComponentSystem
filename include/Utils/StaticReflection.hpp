@@ -31,6 +31,50 @@ namespace punk
 
     template <typename T>
     concept reflectable = reflected<T> || auto_reflectable<T>;
+
+    template <std::size_t I, typename T> requires reflected<std::remove_cvref_t<T>>
+    inline decltype(auto) get(T&& t) noexcept
+    {
+        using reflect_info_t = reflect_info<std::remove_cvref_t<T>>;
+        return (std::forward<T>(t).*std::get<I>(reflect_info_t::members()));
+    }
+
+    template <std::size_t I, typename T> requires reflected<T>
+    constexpr auto get_name() noexcept
+    {
+        using reflect_info_t = reflect_info<T>;
+        return std::get<I>(reflect_info_t::member_names());
+    }
+
+    struct reflected_policy
+    {
+        template <size_t I, typename T>
+        static decltype(auto) get(T&& t) noexcept
+        {
+            return punk::get<I>(std::forward<T>(t));
+        }
+
+        template <size_t I, typename T>
+        static auto get_name() noexcept
+        {
+            return punk::get_name<I, T>();
+        }
+    };
+
+    struct auto_reflectable_policy
+    {
+        template <size_t I, typename T>
+        static decltype(auto) get(T&& t) noexcept
+        {
+            return boost::pfr::get<I>(std::forward<T>(t));
+        }
+
+        template <size_t I, typename T>
+        static auto get_name() noexcept
+        {
+            return boost::pfr::get_name<I, T>();
+        }
+    };
 }
 
 // implementation detail for PUNK_REFLECT_MEMBERS
@@ -74,58 +118,22 @@ namespace punk
 {
     namespace detail
     {
-        template <std::size_t I, typename T, typename F, typename Tuple> requires reflected<std::remove_cvref_t<T>>
-        inline void for_each_field_implement(T&& t, F&& f, Tuple const& tuple)
+        template <size_t I, typename Policy, typename T, typename F>
+        inline void for_each_field(Policy, T&& t, F&& f)
         {
-            // decay the function type
             using func_type = std::decay_t<std::remove_cvref_t<F>>;
-
-            // export the type in tuple with index of I
-            using tuple_element_type = std::tuple_element_t<I, Tuple>;
-
-            // when the element type if pointer-to-member-data, export the acutal field type in the T, otherwise export tuple_element_type
-            using element_type = std::conditional_t<
-                std::is_member_function_pointer_v<tuple_element_type>,
-                decltype(std::forward<T>(t).*std::get<I>(tuple)), tuple_element_type>;
-
-            // match f(field)
+            using element_type = decltype(Policy::template get<I>(std::forward<T>(t)));
             if constexpr(std::is_invocable_v<func_type, element_type>)
             {
-                // match f(t.field)
-                if constexpr(std::is_member_function_pointer_v<tuple_element_type>)
-                {
-                    std::forward<F>(f)(std::forward<T>(t).*std::get<I>(tuple));
-                }
-                else // match f(t.field_name)
-                {
-                    std::forward<F>(f)(std::get<I>(tuple));
-                }
+                std::invoke(std::forward<F>(f), Policy::template get<I>(std::forward<T>(t)));
             }
-            // match f(field, Index)
-            else if constexpr (std::is_invocable_v<func_type, element_type, size_t>)
+            else if constexpr(std::is_invocable_v<func_type, element_type, size_t>)
             {
-                // match f(t.field, Index)
-                if constexpr (std::is_member_function_pointer_v<tuple_element_type>)
-                {
-                    std::forward<F>(f)(std::forward<T>(t).*std::get<I>(tuple), I);
-                } // match f(t.field_name, Index);
-                else
-                {
-                    std::forward<F>(f)(std::get<I>(tuple), I);
-                }
+                std::invoke(std::forward<F>(f), Policy::template get<I>(std::forward<T>(t)), I);
             }
-            // match f(Index, field)
-            else if constexpr (std::is_invocable_v<func_type, size_t, element_type>)
+            else if constexpr(std::is_invocable_v<func_type, size_t, element_type>)
             {
-                // match f(Index, t.field)
-                if constexpr (std::is_member_function_pointer_v<tuple_element_type>)
-                {
-                    std::forward<F>(f)(I, std::forward<T>(t).*std::get<I>(tuple));
-                }
-                else // match f(Index, t.field_name);
-                {
-                    std::forward<F>(f)(I, std::get<I>(tuple));
-                }
+                std::invoke(std::forward<F>(f), I, Policy::template get<I>(std::forward<T>(t)));
             }
             else
             {
@@ -137,41 +145,76 @@ namespace punk
             }
         }
 
-        template <typename T, typename F, typename Tuple, std::size_t ... Is>
-        inline void for_each_field_implement(T&& t, F&& f, Tuple const& tuple, std::index_sequence<Is...>)
+        template<typename Policy, typename T, typename F, size_t ... Is>
+        inline void for_each_field(Policy policy, T&& t, F&& f, std::index_sequence<Is...>)
         {
-            (for_each_field_implement<Is>(std::forward<T>(t), std::forward<F>(f), tuple), ...);
+            (for_each_field<Is>(policy, std::forward<T>(t), std::forward<F>(f)), ...);
         }
 
-        template <std::size_t I, typename T, typename F, typename PmdTuple, typename NameTuple> requires reflected<std::remove_cvref_t<T>>
-        inline void for_each_field_implement(T&& t, F&& f, PmdTuple const& pmd_tuple, NameTuple const& name_tuple)
+        template <size_t I, typename Policy, typename T, typename F>
+        inline void for_each_field_name(Policy, T&& t, F&& f)
         {
+            using type = std::remove_cvref_t<T>;
             using func_type = std::decay_t<std::remove_cvref_t<F>>;
-            using element_type = decltype(std::forward<T>(t).*std::get<I>(pmd_tuple));
-            using name_type = decltype(std::get<I>(name_tuple));
+            using element_type = decltype(Policy::template get_name<I, type>());
+            if constexpr (std::is_invocable_v<func_type, element_type>)
+            {
+                std::invoke(std::forward<F>(f), Policy::template get_name<I, type>());
+            }
+            else if constexpr (std::is_invocable_v<func_type, element_type, size_t>)
+            {
+                std::invoke(std::forward<F>(f), Policy::template get_name<I, type>(), I);
+            }
+            else if constexpr (std::is_invocable_v<func_type, size_t, element_type>)
+            {
+                std::invoke(std::forward<F>(f), I, Policy::template get_name<I, type>());
+            }
+            else
+            {
+                static_assert(std::disjunction_v<
+                    std::is_invocable<func_type, element_type>,
+                    std::is_invocable<func_type, element_type, size_t>,
+                    std::is_invocable<func_type, size_t, element_type>
+                >, "Unsupported function for for_each_field_implement");
+            }
+        }
+
+        template<typename Policy, typename T, typename F, size_t ... Is>
+        inline void for_each_field_name(Policy policy, T&& t, F&& f, std::index_sequence<Is...>)
+        {
+            (for_each_field_name<Is>(policy, std::forward<T>(t), std::forward<F>(f)), ...);
+        }
+
+        template <size_t I, typename Policy, typename T, typename F>
+        inline void for_each_field_and_name(Policy, T&& t, F&& f)
+        {
+            using type = std::remove_cvref_t<T>;
+            using func_type = std::decay_t<std::remove_cvref_t<F>>;
+            using element_type = decltype(Policy::template get<I>(std::forward<T>(t)));
+            using name_type = decltype(Policy::template get_name<I, type>());
             if constexpr (std::is_invocable_v<func_type, element_type, name_type>) // match f(t.*pmd, t.name)
             {
-                std::forward<F>(f)(std::forward<T>(t).*std::get<I>(pmd_tuple), std::get<I>(name_tuple));
+                std::invoke(std::forward<F>(f), Policy::template get<I>(std::forward<T>(t)), Policy::template get_name<I, type>());
             }
-            else if constexpr(std::is_invocable_v<func_type, name_type, element_type>) // match f(t.name, t.*pmd)
+            else if constexpr (std::is_invocable_v<func_type, name_type, element_type>) // match f(t.name, t.*pmd)
             {
-                std::forward<F>(f)(std::get<I>(name_tuple), std::forward<T>(t).*std::get<I>(pmd_tuple));
+                std::invoke(std::forward<F>(f), Policy::template get_name<I, type>(), Policy::template get<I>(std::forward<T>(t)));
             }
-            else if constexpr(std::is_invocable_v<func_type, size_t, element_type, name_type>) // match f(I, t.*pmd, t.name)
+            else if constexpr (std::is_invocable_v<func_type, size_t, element_type, name_type>) // match f(I, t.*pmd, t.name)
             {
-                std::forward<F>(f)(I, std::forward<T>(t).*std::get<I>(pmd_tuple), std::get<I>(name_tuple));
+                std::invoke(std::forward<F>(f), I, Policy::template get<I>(std::forward<T>(t)), Policy::template get_name<I, type>());
             }
             else if constexpr (std::is_invocable_v<func_type, size_t, name_type, element_type>) // match f(I, t.name, t.*pmd)
             {
-                std::forward<F>(f)(I, std::get<I>(name_tuple), std::forward<T>(t).*std::get<I>(pmd_tuple));
+                std::invoke(std::forward<F>(f), I, Policy::template get_name<I, type>(), Policy::template get<I>(std::forward<T>(t)));
             }
             else if constexpr (std::is_invocable_v<func_type, element_type, name_type, size_t>) // match f(t.*pmd, t.name, I)
             {
-                std::forward<F>(f)(std::forward<T>(t).*std::get<I>(pmd_tuple), std::get<I>(name_tuple), I);
+                std::invoke(std::forward<F>(f), Policy::template get<I>(std::forward<T>(t)), Policy::template get_name<I, type>(), I);
             }
             else if constexpr (std::is_invocable_v<func_type, name_type, element_type, size_t>) // match f(t.name, t.*pmd, I)
             {
-                std::forward<F>(f)(std::get<I>(name_tuple), std::forward<T>(t).*std::get<I>(pmd_tuple), I);
+                std::invoke(std::forward<F>(f), Policy::template get_name<I, type>(), Policy::template get<I>(std::forward<T>(t)), I);
             }
             else
             {
@@ -186,35 +229,52 @@ namespace punk
             }
         }
 
-        template <typename T, typename F, typename PmdTuple, typename NameTuple, std::size_t ... Is>
-        inline void for_each_field_implement(T&& t, F&& f, PmdTuple const& pmd_tuple, NameTuple const& name_tuple, std::index_sequence<Is...>)
+        template <typename Policy, typename T, typename F, size_t ... Is>
+        inline void for_each_field_and_name(Policy policy, T&& t, F&& f, std::index_sequence<Is...>)
         {
-            (for_each_field_implement<Is>(std::forward<T>(t), std::forward<F>(f), pmd_tuple, name_tuple), ...);
+            (for_each_field_and_name<Is>(policy, std::forward<T>(t), std::forward<F>(f)), ...);
         }
     }
 
-    template <reflectable T, typename F>
+    template <typename T, typename F> requires reflectable<std::remove_cvref_t<T>>
     inline void for_each_field(T&& t, F&& f)
     {
-        using reflect_info_t = reflect_info<std::remove_cvref_t<T>>;
-        detail::for_each_field_implement(std::forward<T>(t), std::forward<F>(f),
-            reflect_info_t::members(), std::make_index_sequence<reflect_info_t::field_count()>);
+        if constexpr(reflected<std::remove_cvref_t<T>>)
+        {
+            detail::for_each_field(reflected_policy{}, std::forward<T>(t), std::forward<F>(f));
+        }
+        else
+        {
+            static_assert(auto_reflectable<std::remove_cvref_t<T>>);
+            detail::for_each_field(auto_reflectable_policy{}, std::forward<T>(t), std::forward<F>(f));
+        }
     }
 
-    template <reflectable T, typename F>
+    template <typename T, typename F> requires reflectable<std::remove_cvref_t<T>>
     inline void for_each_field_name(T&& t, F&& f)
     {
-        using reflect_info_t = reflect_info<std::remove_cvref_t<T>>;
-        detail::for_each_field_implement(std::forward<T>(t), std::forward<F>(f),
-            reflect_info_t::member_names(), std::make_index_sequence<reflect_info_t::field_count()>);
+        if constexpr(reflected<std::remove_cvref_t<T>>)
+        {
+            detail::for_each_field_name(reflected_policy{}, std::forward<T>(t), std::forward<F>(f));
+        }
+        else
+        {
+            static_assert(auto_reflectable<std::remove_cvref_t<T>>);
+            detail::for_each_field_name(auto_reflectable_policy{}, std::forward<T>(t), std::forward<F>(f));
+        }
     }
 
-    template <reflectable T, typename F>
+    template <typename T, typename F> requires reflectable<std::remove_cvref_t<T>>
     inline void for_each_field_and_name(T&& t, F&& f)
     {
-        using reflect_info_t = reflect_info<std::remove_cvref_t<T>>;
-        detail::for_each_field_implement(std::forward<T>(t), std::forward<F>(f),
-            reflect_info_t::members(), reflect_info_t::member_names(),
-            std::make_index_sequence<reflect_info_t::field_count()>);
+        if constexpr (reflected<std::remove_cvref_t<T>>)
+        {
+            detail::for_each_field_and_name(reflected_policy{}, std::forward<T>(t), std::forward<F>(f));
+        }
+        else
+        {
+            static_assert(auto_reflectable<std::remove_cvref_t<T>>);
+            detail::for_each_field_and_name(auto_reflectable_policy{}, std::forward<T>(t), std::forward<F>(f));
+        }
     }
 }
