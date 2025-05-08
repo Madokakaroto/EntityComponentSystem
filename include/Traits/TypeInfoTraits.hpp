@@ -8,6 +8,14 @@
 
 namespace ecs
 {
+    // generic traits implementation
+    template <typename T>
+    struct type_info_traits;
+}
+
+// for primative types
+namespace ecs
+{
     template <typename T>
     struct primative_type_info_traits
     {
@@ -46,26 +54,6 @@ namespace ecs
                 vtable.move_func = [](void* dst, void* src) { *reinterpret_cast<T*>(dst) = std::move(*reinterpret_cast<T const*>(src)); };
             }
         }
-    };
-
-    // generic traits implementation
-    template <typename T>
-    struct type_info_traits : primative_type_info_traits<T>
-    {
-    public: 
-        // static type check
-        static_assert(std::conjunction_v<
-            std::negation<std::is_reference<T>>,
-            std::negation<std::is_pointer<T>>,
-            std::negation<std::is_const<T>>,
-            std::negation<std::is_volatile<T>>,
-            std::negation<std::is_function<T>>,
-            std::negation<std::is_void<T>>,
-            std::negation<is_char_array<T>>
-            >, "Type not Supported!"
-        );
-
-        using type = typename primative_type_info_traits<T>::type;
     };
 
     #define ECS_IMPLEMENT_PRIMATIVE_TYPE(Type, TypeName)                    \
@@ -144,4 +132,11 @@ namespace ecs
             return std::format("std::unordered_map<{}, {}>", key_type_info::get_type_info(), value_type_info::get_type_name());
         }
     };
+}
+
+// for reflectible types
+namespace ecs
+{
+    template <typename T>
+    struct is_tuple
 }
