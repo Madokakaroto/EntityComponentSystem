@@ -12,22 +12,24 @@ namespace punk
     template <typename T>
     concept reflected = requires
     {
-        // reflect_info shall be a complete type
-        std::is_trivially_constructible<reflect_info<T>>;
-        std::is_trivially_default_constructible<reflect_info<T>>;
+        // type
+        std::same_as<T, typename reflect_info<T>::type>;
+
+        // name
+        { reflect_info<T>::name() } -> std::same_as<std::string_view>;
 
         // field count
         { reflect_info<T>::field_count() } -> std::convertible_to<size_t>;
-
+        
         // members
         { reflect_info<T>::members() };
-
+        
         // member names
         { reflect_info<T>::member_names() };
     };
 
     template <typename T>
-    concept auto_reflectable = boost::pfr::is_reflectable<T>::value;
+    concept auto_reflectable = std::is_aggregate_v<T>;
 
     template <typename T>
     concept reflectable = reflected<T> || auto_reflectable<T>;
@@ -59,6 +61,13 @@ namespace punk
         {
             return punk::get_name<I, T>();
         }
+
+        template <typename T>
+        static constexpr auto field_count() noexcept
+        {
+            using reflect_info_t = reflect_info<T>;
+            return reflect_info_t::field_count();
+        }
     };
 
     struct auto_reflectable_policy
@@ -73,6 +82,12 @@ namespace punk
         static auto get_name() noexcept
         {
             return boost::pfr::get_name<I, T>();
+        }
+
+        template <typename T>
+        static constexpr auto field_count() noexcept
+        {
+            return boost::pfr::tuple_size_v<T>;
         }
     };
 }
@@ -103,7 +118,7 @@ static constexpr auto members() noexcept                                        
 #define PUNK_REFLECT(CLASS, ...)                                                  \
 template <> struct ::punk::reflect_info<CLASS>                                    \
 {                                                                                 \
-    static_assert(std::negation_v<std::junction<                                  \
+    static_assert(std::negation_v<std::conjunction<                               \
         std::is_pointer<CLASS>,                                                   \
         std::is_reference<CLASS>,                                                 \
         std::is_array<CLASS>,                                                     \
@@ -151,6 +166,13 @@ namespace punk
             (for_each_field<Is>(policy, std::forward<T>(t), std::forward<F>(f)), ...);
         }
 
+        template<typename Policy, typename T, typename F>
+        inline void for_each_field(Policy policy, T&& t, F&& f)
+        {
+            using index_seq_t = std::make_index_sequence<Policy::template field_count<std::remove_cvref_t<T>>()>;
+            for_each_field(policy, std::forward<T>(t), std::forward<F>(f), index_seq_t{});
+        }
+
         template <size_t I, typename Policy, typename T, typename F>
         inline void for_each_field_name(Policy, T&& t, F&& f)
         {
@@ -183,6 +205,13 @@ namespace punk
         inline void for_each_field_name(Policy policy, T&& t, F&& f, std::index_sequence<Is...>)
         {
             (for_each_field_name<Is>(policy, std::forward<T>(t), std::forward<F>(f)), ...);
+        }
+
+        template<typename Policy, typename T, typename F>
+        inline void for_each_field_name(Policy policy, T&& t, F&& f)
+        {
+            using index_seq_t = std::make_index_sequence<Policy::template field_count<std::remove_cvref_t<T>>()>;
+            for_each_field_name(policy, std::forward<T>(t), std::forward<F>(f), index_seq_t{});
         }
 
         template <size_t I, typename Policy, typename T, typename F>
@@ -233,6 +262,13 @@ namespace punk
         inline void for_each_field_and_name(Policy policy, T&& t, F&& f, std::index_sequence<Is...>)
         {
             (for_each_field_and_name<Is>(policy, std::forward<T>(t), std::forward<F>(f)), ...);
+        }
+
+        template<typename Policy, typename T, typename F>
+        inline void for_each_field_and_name(Policy policy, T&& t, F&& f)
+        {
+            using index_seq_t = std::make_index_sequence<Policy::template field_count<std::remove_cvref_t<T>>()>;
+            for_each_field_and_name(policy, std::forward<T>(t), std::forward<F>(f), index_seq_t{});
         }
     }
 
