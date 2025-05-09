@@ -159,19 +159,6 @@ namespace punk
         }
     };
 
-    namespace detail
-    {
-        template <typename Tuple>
-        struct tuple_to_sequence_tuple;
-        template <typename ... Args>
-        struct tuple_to_sequence_tuple<std::tuple<Args...>>
-        {
-            using type = boost::pfr::detail::sequence_tuple::tuple<Args...>;
-        };
-        template <typename Tuple>
-        using tuple_to_sequence_tuple_t = typename tuple_to_sequence_tuple<Tuple>::type;
-    }
-
     template <typename T> requires auto_reflectable<T> && !reflected<T>
     struct type_info_traits<T> : primative_type_info_traits<T>
     {
