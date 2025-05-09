@@ -18,6 +18,9 @@ namespace punk
 
     template <typename T>
     using value_type_t = typename T::value_type;
+
+    template <typename T, typename S>
+    constexpr auto type_of_pmd(T S::*) noexcept -> T;
 }
 
 // boolean meta-functions

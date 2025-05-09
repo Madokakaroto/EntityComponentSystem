@@ -138,9 +138,57 @@ namespace punk
 // for reflectible types
 namespace punk
 {
-    template <typename T> requires reflected<T>
-    struct type_info_traits : primative_type_info_traits<T>
+    template <reflected T>
+    struct type_info_traits<T> : primative_type_info_traits<T>
     {
         using type = typename primative_type_info_traits<T>::type;
+        using reflect_info_t = reflect_info<type>;
+
+        static constexpr size_t field_count() noexcept
+        {
+            return reflect_info_t::field_count();
+        }
+
+        template <size_t I>
+        static constexpr auto field_type() noexcept -> tuple_element_t<I, T>;
+
+        template <size_t I>
+        static /*constexpr*/ size_t field_offset() noexcept
+        {
+            return std::get<I>(reflect_info_t::member_offsets());
+        }
+    };
+
+    namespace detail
+    {
+        template <typename Tuple>
+        struct tuple_to_sequence_tuple;
+        template <typename ... Args>
+        struct tuple_to_sequence_tuple<std::tuple<Args...>>
+        {
+            using type = boost::pfr::detail::sequence_tuple::tuple<Args...>;
+        };
+        template <typename Tuple>
+        using tuple_to_sequence_tuple_t = typename tuple_to_sequence_tuple<Tuple>::type;
+    }
+
+    template <typename T> requires auto_reflectable<T> && !reflected<T>
+    struct type_info_traits<T> : primative_type_info_traits<T>
+    {
+        using type = typename primative_type_info_traits<T>::type;
+
+        static constexpr size_t field_count() noexcept
+        {
+            return boost::pfr::tuple_size_v<type>;
+        }
+
+        template <size_t I>
+        static constexpr auto field_type() noexcept -> boost::pfr::tuple_element_t<I, type>;
+
+        template <size_t I>
+        static /*constexpr*/ size_t field_offset() noexcept
+        {
+            return reinterpret_cast<size_t>(std::addressof(boost::pfr::get<I>(*reinterpret_cast<type*>(0))));
+        }
     };
 }

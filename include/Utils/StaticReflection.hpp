@@ -34,19 +34,28 @@ namespace punk
     template <typename T>
     concept reflectable = reflected<T> || auto_reflectable<T>;
 
-    template <std::size_t I, typename T> requires reflected<std::remove_cvref_t<T>>
-    inline decltype(auto) get(T&& t) noexcept
+    template <size_t I, typename T> requires reflected<std::remove_cvref_t<T>>
+    constexpr decltype(auto) get(T&& t) noexcept
     {
         using reflect_info_t = reflect_info<std::remove_cvref_t<T>>;
         return (std::forward<T>(t).*std::get<I>(reflect_info_t::members()));
     }
 
-    template <std::size_t I, typename T> requires reflected<T>
+    template <size_t I, typename T> requires reflected<T>
     constexpr auto get_name() noexcept
     {
         using reflect_info_t = reflect_info<T>;
         return std::get<I>(reflect_info_t::member_names());
     }
+
+    template <size_t I, typename T> requires reflected<T>
+    struct tuple_element
+    {
+        using reflect_info_t = reflect_info<T>;
+        using type = decltype(type_of_pmd(std::get<I>(reflect_info_t::members())));
+    };
+    template <size_t I, typename T>
+    using tuple_element_t = typename tuple_element<I, T>::type;
 
     struct reflected_policy
     {
@@ -97,10 +106,12 @@ namespace punk
 #define PUNK_REFLECT_ACCESS_MEMBER(c, m) &c::m
 #define PUNK_REFLECT_MEMBER_NAME_II(member) std::string_view{ #member }
 #define PUNK_REFLECT_MEMBER_NAME_I(member) PUNK_REFLECT_MEMBER_NAME_II(member)
+#define PUNK_REFLECT_MEMBER_OFFSET_I(c, m) offsetof(c, m)
 #define PUNK_REFLECT_MEMBER_NAME(r, data, i, t) BOOST_PP_COMMA_IF(i) PUNK_REFLECT_MEMBER_NAME_I(t)
+#define PUNK_REFLECT_MEMBER_DATA(r, data, i, t) BOOST_PP_COMMA_IF(i) PUNK_REFLECT_ACCESS_MEMBER(data, t)
+#define PUNK_REFLECT_MEMBER_OFFSET(r, data, i, t) BOOST_PP_COMMA_IF(i) PUNK_REFLECT_MEMBER_OFFSET_I(data, t)
 
 // members generation for reflect_info
-#define PUNK_REFLECT_MEMBER_DATA(r, data, i, t) BOOST_PP_COMMA_IF(i) PUNK_REFLECT_ACCESS_MEMBER(data, t)
 #define PUNK_REFLECT_MEMBERS(CLASS, N, ...)                                                                                  \
 using type = CLASS;                                                                                                          \
 static constexpr std::string_view name() noexcept { return #CLASS; }                                                         \
@@ -112,6 +123,10 @@ static constexpr auto member_names() noexcept -> std::array<std::string_view, N>
 static constexpr auto members() noexcept                                                                                     \
 {                                                                                                                            \
     return std::make_tuple(BOOST_PP_SEQ_FOR_EACH_I(PUNK_REFLECT_MEMBER_DATA, CLASS, BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__))); \
+}                                                                                                                            \
+static constexpr auto member_offsets() noexcept -> std::array<size_t, N>                                                     \
+{                                                                                                                            \
+    return { BOOST_PP_SEQ_FOR_EACH_I(PUNK_REFLECT_MEMBER_OFFSET, CLASS, BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__)) };            \
 }
 
 // the reflection interface

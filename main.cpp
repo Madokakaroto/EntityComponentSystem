@@ -55,7 +55,20 @@ int main(void)
     punk::for_each_field_name(f, [](std::string_view name) { std::cout << name << std::endl; });
     punk::for_each_field_and_name(f, [](std::string_view name, auto value) { std::cout << name << ":" << value << std::endl; });
 
-    using type_info_traits_t = punk::type_info_traits<bar>;
+    using type_info_traits_bar = punk::type_info_traits<bar>;
+    static_assert(type_info_traits_bar::field_count() == 1);
+    //static_assert(type_info_traits_bar::field_offset<0>() == 0);
+    std::cout << "field offset: " << type_info_traits_bar::field_offset<0>() << std::endl;
+    static_assert(std::is_same_v<decltype(type_info_traits_bar::field_type<0>()), float>);
 
+
+    using type_info_traits_fee = punk::type_info_traits<fee>;
+    static_assert(type_info_traits_fee::field_count() == 2);
+    //static_assert(type_info_traits_fee::field_offset<0>() == 0);
+    //static_assert(type_info_traits_fee::field_offset<1>() == size_t{ 12 });
+    std::cout << "field offset0: " << type_info_traits_fee::field_offset<0>() << std::endl;
+    std::cout << "field offset1: " << type_info_traits_fee::field_offset<1>() << std::endl;
+    static_assert(std::is_same_v<decltype(type_info_traits_fee::field_type<0>()), double>);
+    static_assert(std::is_same_v<decltype(type_info_traits_fee::field_type<1>()), int>);
     return 0;
 }
