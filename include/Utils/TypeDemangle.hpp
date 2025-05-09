@@ -21,7 +21,7 @@ namespace punk
 #endif
 
     template <typename T>
-    [[nodiscard]] inline std::string get_demangle_name()
+    inline std::string get_demangle_name()
     {
         decltype(auto) type_info = typeid(T);
 #if defined(_MSC_VER)

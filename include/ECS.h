@@ -8,3 +8,4 @@
 #include "Utils/TypeDemangle.hpp"
 #include "Utils/Hash.hpp"
 #include "Types/Meta.h"
+#include "Traits/TypeInfoTraits.hpp"

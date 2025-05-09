@@ -55,5 +55,7 @@ int main(void)
     punk::for_each_field_name(f, [](std::string_view name) { std::cout << name << std::endl; });
     punk::for_each_field_and_name(f, [](std::string_view name, auto value) { std::cout << name << ":" << value << std::endl; });
 
+    using type_info_traits_t = punk::type_info_traits<bar>;
+
     return 0;
 }

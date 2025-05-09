@@ -5,6 +5,7 @@
 #include "Utils/TypeDemangle.hpp"
 #include "Utils/Hash.hpp"
 #include "Types/Meta.h"
+#include "Utils/StaticReflection.hpp"
 
 namespace punk
 {
@@ -21,25 +22,25 @@ namespace punk
     {
         using type = T;
 
-        [[nodiscard]] static std::string get_type_name()
+        static std::string get_type_name()
         {
             return get_demangle_name<type>();
         }
 
-        [[nodiscard]] static constexpr size_t get_field_count() noexcept
+        static constexpr size_t get_field_count() noexcept
         {
             return size_t{ 0 };
         }
 
-        [[nodiscard]] static uint32_t get_hash()
+        static uint32_t get_hash()
         {
             auto const type_name = type::get_type_name();
             return hash_memory(type_name.c_str(), type_name.length());
         }
 
-        [[nodiscard]] static auto get_vtable() noexcept -> type_hash_t
+        static auto get_vtable() noexcept -> type_vtable_t
         {
-            type_hash_t vtable = { nullptr, nullptr, nullptr, nullptr, nullptr };
+            type_vtable_t vtable = { nullptr, nullptr, nullptr, nullptr, nullptr };
 
             if constexpr(std::negation_v<std::is_trivially_constructible<T>>)
             {
@@ -56,12 +57,12 @@ namespace punk
         }
     };
 
-    #define PUNK_IMPLEMENT_PRIMATIVE_TYPE(Type, TypeName)                    \
+    #define PUNK_IMPLEMENT_PRIMATIVE_TYPE(Type, TypeName)                   \
     template <>                                                             \
     struct type_info_traits<Type> : primative_type_info_traits<Type>        \
     {                                                                       \
         using type = typename primative_type_info_traits<Type>::type;       \
-        [[nodiscard]] static std::string get_type_name()                    \
+        static std::string get_type_name()                                  \
         {                                                                   \
             return #TypeName;                                               \
         }                                                                   \
@@ -88,7 +89,7 @@ namespace punk
     {
         using type = typename primative_type_info_traits<std::array<T, Size>>::type;
 
-        [[nodiscard]] static std::string get_type_name()
+        static std::string get_type_name()
         {
             using value_type_info = type_info_traits<T>;
             return std::format("std::array<{}, {}>", value_type_info::get_type_name(), Size);
@@ -100,7 +101,7 @@ namespace punk
     {
         using type = typename primative_type_info_traits<vector<T>>::type;
 
-        [[nodiscard]] static std::string get_type_name()
+        static std::string get_type_name()
         {
             using value_type_info = type_info_traits<T>;
             return std::format("std::vector<{}>", value_type_info::get_type_name());
@@ -112,7 +113,7 @@ namespace punk
     {
         using type = typename primative_type_info_traits<map<Key, Value>>::type;
 
-        [[nodiscard]] static std::string get_type_name()
+        static std::string get_type_name()
         {
             using key_type_info = type_info_traits<Key>;
             using value_type_info = type_info_traits<Value>;
@@ -125,7 +126,7 @@ namespace punk
     {
         using type = typename primative_type_info_traits<unordered_map<Key, Value>>::type;
 
-        [[nodiscard]] static std::string get_type_name()
+        static std::string get_type_name()
         {
             using key_type_info = type_info_traits<Key>;
             using value_type_info = type_info_traits<Value>;
@@ -137,6 +138,9 @@ namespace punk
 // for reflectible types
 namespace punk
 {
-    //template <typename T>
-    //struct is_tuple
+    template <typename T> requires reflected<T>
+    struct type_info_traits : primative_type_info_traits<T>
+    {
+        using type = typename primative_type_info_traits<T>::type;
+    };
 }
