@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Meta.h"
+#include "Traits/TypeInfoTraits.hpp"
 
 namespace punk
 {

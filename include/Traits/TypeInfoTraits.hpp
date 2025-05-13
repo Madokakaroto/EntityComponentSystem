@@ -6,6 +6,7 @@
 #include "Utils/Hash.hpp"
 #include "Types/Meta.h"
 #include "Utils/StaticReflection.hpp"
+#include "boost/pfr/detail/offset_based_getter.hpp"
 
 namespace punk
 {
@@ -135,6 +136,35 @@ namespace punk
     };
 }
 
+// helpers to traits offset for boost::pfr
+namespace punk::detail
+{
+    template <typename SeqTuple>
+    struct tuple_remove_cvref;
+    template <typename ... Args>
+    struct tuple_remove_cvref<boost::pfr::detail::sequence_tuple::tuple<Args...>>
+    {
+        using type = boost::pfr::detail::sequence_tuple::tuple<std::remove_cvref_t<Args>...>;
+    };
+    template <typename SeqTuple>
+    using tuple_remove_cvref_t = typename tuple_remove_cvref<SeqTuple>::type;
+
+    template <typename T>
+    struct pfr_offset_getter
+    {
+        using tied_tuple = decltype(boost::pfr::detail::tie_as_tuple(std::declval<T const&>()));
+        using seq_tuple = tuple_remove_cvref_t<tied_tuple>;
+        using offset_getter_check_type = boost::pfr::detail::offset_based_getter<T, seq_tuple>;
+
+        template <std::size_t idx>
+        static constexpr size_t offset() noexcept {
+            constexpr boost::pfr::detail::tuple_of_aligned_storage_t<seq_tuple> layout{};
+            return static_cast<size_t>(&boost::pfr::detail::sequence_tuple::get<idx>(layout).storage_[0]
+                - &boost::pfr::detail::sequence_tuple::get<0>(layout).storage_[0]);
+        }
+    };
+}
+
 // for reflectible types
 namespace punk
 {
@@ -175,7 +205,8 @@ namespace punk
         template <size_t I>
         static /*constexpr*/ size_t field_offset() noexcept
         {
-            return reinterpret_cast<size_t>(std::addressof(boost::pfr::get<I>(*reinterpret_cast<type*>(0))));
+            using offset_getter = detail::pfr_offset_getter<type>;
+            return offset_getter::template offset<I>();
         }
     };
 }

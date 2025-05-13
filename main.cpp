@@ -4,6 +4,9 @@
 
 #include "Utils/StaticReflection.hpp"
 
+#include "boost/pfr/detail/offset_based_getter.hpp"
+#include "boost/pfr/detail/sequence_tuple.hpp"
+
 class foo {};
 
 struct fee
@@ -17,6 +20,14 @@ struct bar
     float float_value;
 };
 PUNK_REFLECT(bar, float_value);
+
+struct alignas(8) test_align
+{
+    int int_value;
+    char char_value;
+    double double_value;
+    std::string str_value;
+};
 
 async_simple::coro::Lazy<int> get_43() {
     std::cout << "run with ::operator new/delete" << '\n';
@@ -61,14 +72,23 @@ int main(void)
     std::cout << "field offset: " << type_info_traits_bar::field_offset<0>() << std::endl;
     static_assert(std::is_same_v<decltype(type_info_traits_bar::field_type<0>()), float>);
 
-
     using type_info_traits_fee = punk::type_info_traits<fee>;
     static_assert(type_info_traits_fee::field_count() == 2);
-    //static_assert(type_info_traits_fee::field_offset<0>() == 0);
-    //static_assert(type_info_traits_fee::field_offset<1>() == size_t{ 12 });
     std::cout << "field offset0: " << type_info_traits_fee::field_offset<0>() << std::endl;
     std::cout << "field offset1: " << type_info_traits_fee::field_offset<1>() << std::endl;
     static_assert(std::is_same_v<decltype(type_info_traits_fee::field_type<0>()), double>);
     static_assert(std::is_same_v<decltype(type_info_traits_fee::field_type<1>()), int>);
+
+    using type_info_traits_ta = punk::type_info_traits<test_align>;
+    static_assert(type_info_traits_ta::field_count() == 4);
+    std::cout << "field offset0: " << type_info_traits_ta::field_offset<0>() << std::endl;
+    std::cout << "field offset1: " << type_info_traits_ta::field_offset<1>() << std::endl;
+    std::cout << "field offset2: " << type_info_traits_ta::field_offset<2>() << std::endl;
+    std::cout << "field offset3: " << type_info_traits_ta::field_offset<3>() << std::endl;
+    static_assert(std::is_same_v<decltype(type_info_traits_ta::field_type<0>()), int>);
+    static_assert(std::is_same_v<decltype(type_info_traits_ta::field_type<1>()), char>);
+    static_assert(std::is_same_v<decltype(type_info_traits_ta::field_type<2>()), double>);
+    static_assert(std::is_same_v<decltype(type_info_traits_ta::field_type<3>()), std::string>);
+
     return 0;
 }
