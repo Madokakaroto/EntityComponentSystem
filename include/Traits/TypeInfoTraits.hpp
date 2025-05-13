@@ -28,6 +28,16 @@ namespace punk
             return get_demangle_name<type>();
         }
 
+        static constexpr size_t get_size() noexcept
+        {
+            return sizeof(T);
+        }
+
+        static constexpr size_t get_alignment() noexcept
+        {
+            return alignof(T);
+        }
+
         static constexpr size_t get_field_count() noexcept
         {
             return size_t{ 0 };

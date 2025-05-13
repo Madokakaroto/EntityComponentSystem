@@ -163,6 +163,35 @@ namespace punk
             return emplace_result.first->second.get();
             // TODO ... conflict when hash.component.value2 is not the same
         }
+
+        virtual Lazy<type_info_t const*> async_get_type_info(char const* type_name) const override
+        {
+            if(!type_name)
+            {
+                co_return nullptr;
+            }
+            auto const type_name_hash = hash_memory(type_name, std::strlen(type_name));
+            co_return co_await async_get_type_info(type_name_hash);
+        }
+
+        virtual Lazy<type_info_t const*> async_get_type_info(uint32_t type_name_hash) const override
+        {
+            auto scope = type_locks.coScopedLock();
+            auto itr = runtime_type_infos.find(type_name_hash);
+            if (itr != runtime_type_infos.end())
+            {
+                co_return itr->second.get();
+            }
+            co_return nullptr;
+        }
+
+        virtual Lazy<type_info_t const*> async_register_type_info(type_info_t* type_info) override
+        {
+            auto const type_name_hash = type_info->hash.components.value1;
+            auto scope = type_locks.coScopedLock();
+            auto const emplace_result = runtime_type_infos.emplace(type_name_hash, type_info);
+            co_return emplace_result.first->second.get();
+        }
     };
 
     runtime_type_system* runtime_type_system::create_instance()

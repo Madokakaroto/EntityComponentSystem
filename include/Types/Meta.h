@@ -64,7 +64,7 @@ namespace punk
     type_info_t* create_type_info(char const* type_name, uint32_t size, uint32_t alignment, type_vtable_t const& type_vtable, uint32_t field_count);
 
     // delete type info
-    void destroy_type_info(type_info_t* type_info);
+    void destroy_type_info(type_info_t* type_info) noexcept;
 
     // get size
     uint32_t get_size(type_info_t const* type_info);

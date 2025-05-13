@@ -96,10 +96,10 @@ namespace punk
         return murmur_hash_x86_32(arr, ecs_seed);
     }
 
-    inline uint32_t hash_memory(char const* arr, int const len)
+    inline uint32_t hash_memory(char const* arr, size_t const len)
     {
         // hex from of 'x' 'e' 'c' 's'
         constexpr uint32_t ecs_seed = 0x78656373;
-        return murmur_hash_x86_32(arr, len, ecs_seed);
+        return murmur_hash_x86_32(arr, static_cast<int>(len), ecs_seed);
     }
 }
