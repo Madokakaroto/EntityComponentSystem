@@ -201,9 +201,9 @@ namespace punk
         static constexpr auto get_field_type() noexcept -> tuple_element_t<I, type>;
 
         template <size_t I>
-        static /*constexpr*/ size_t get_field_offset() noexcept
+        static /*constexpr*/ uint32_t get_field_offset() noexcept
         {
-            return std::get<I>(reflect_info_t::member_offsets());
+            return static_cast<uint32_t>(std::get<I>(reflect_info_t::member_offsets()));
         }
     };
 
@@ -221,10 +221,10 @@ namespace punk
         static constexpr auto get_field_type() noexcept -> boost::pfr::tuple_element_t<I, type>;
 
         template <size_t I>
-        static /*constexpr*/ size_t get_field_offset() noexcept
+        static /*constexpr*/ uint32_t get_field_offset() noexcept
         {
             using offset_getter = detail::pfr_offset_getter<type>;
-            return offset_getter::template offset<I>();
+            return static_cast<uint32_t>(offset_getter::template offset<I>());
         }
     };
 }

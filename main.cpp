@@ -101,5 +101,17 @@ int main(void)
         std::cout << "field offset:" << field.offset << std::endl;
     }
 
+    auto* fee_type_info = syncAwait(rtti->async_get_or_create_type_info<fee>());
+    std::cout << "type name:" << fee_type_info->name << std::endl;
+    std::cout << "type size:" << fee_type_info->size << std::endl;
+    std::cout << "type alignment:" << fee_type_info->alignment << std::endl;
+    std::cout << "type field count:" << fee_type_info->fields.size() << std::endl;
+    for (auto loop = 0; loop < fee_type_info->fields.size(); ++loop)
+    {
+        auto const& field = fee_type_info->fields[loop];
+        std::cout << "field type name:" << field.type->name << std::endl;
+        std::cout << "field offset:" << field.offset << std::endl;
+    }
+
     return 0;
 }

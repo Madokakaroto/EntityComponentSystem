@@ -48,13 +48,6 @@ namespace punk
         
         template <typename T>
         Lazy<type_info_t const*> async_get_or_create_type_info();
-
-
-    private:
-        template <typename T, size_t ... Is>
-        void initialize_field_info(type_info_t* type_info, std::index_sequence<Is...>);
-        template <size_t I, typename T>
-        void initialize_field_info(field_info_t* type_info);
     };
 }
 
@@ -120,22 +113,6 @@ namespace punk
         return type_info;
     }
 
-    template <typename T, size_t ... Is>
-    void runtime_type_system::initialize_field_info(type_info_t* type_info, std::index_sequence<Is...>)
-    {
-        (initialize_field_info<Is, T>(get_mutable_field_info(type_info, Is)), ...);
-    }
-
-    template <size_t I, typename T>
-    void runtime_type_system::initialize_field_info(field_info_t* field_info)
-    {
-        using type_info_traits_t = type_info_traits<T>;
-        using field_type = decltype(type_info_traits_t::template get_field_type<I>());
-        using field_type_info_traits_t = type_info_traits<field_type>;
-        set_field_type(field_info, get_or_create_type_info<field_type>());
-        set_field_offset(field_info, type_info_traits_t::template get_field_offset<I>());
-    }
-
     template <typename T>
     inline Lazy<type_info_t const*> runtime_type_system::async_get_or_create_type_info()
     {
@@ -165,24 +142,25 @@ namespace punk
         if constexpr (type_info_traits_t::get_field_count() > 0)
         {
             co_await async_static_for<0, type_info_traits_t::get_field_count()>(
-                [&]<size_t Index>()
+                [&]<size_t Index>() -> Lazy<void>
             {
                 // query field info
                 auto* field_info = get_mutable_type_field_info(new_type_info.get(), Index);
                 assert(field_info);
 
                 // set type_info
-                using field_type = decltype(type_info_traits_t::template field_type<Index>());
+                using field_type = decltype(type_info_traits_t::template get_field_type<Index>());
                 auto* field_type_info = co_await async_get_or_create_type_info<field_type>();
                 assert(field_type_info);
                 set_field_type(field_info, field_type_info);
 
                 // set type offset
-                auto const offset = type_info_traits_t::template field_offset<Index>();
-                set_field_type(field_info, offset);
-
-                // TODO ... set hash component 2
+                auto const offset = type_info_traits_t::template get_field_offset<Index>();
+                set_field_offset(field_info, offset);
             });
+
+            // initialize type hash component2
+            update_hash_for_fields(new_type_info.get());
         }
 
         // 2-phrase commit
