@@ -17,7 +17,7 @@ namespace punk
 
     struct field_info_t
     {
-        type_info_t*                type;
+        type_info_t const*          type;
         uint32_t                    offset;
     };
 

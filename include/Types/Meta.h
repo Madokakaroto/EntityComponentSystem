@@ -12,9 +12,11 @@ namespace punk
     {
         struct
         {
+            // value1 is the hash value of type name
             uint32_t value1;
+            // value2 is the hash value of all field member`s hash value
             uint32_t value2;
-        }        components;
+        } components;
         uint64_t value;
     };
 
@@ -67,39 +69,39 @@ namespace punk
     void destroy_type_info(type_info_t* type_info) noexcept;
 
     // get size
-    uint32_t get_size(type_info_t const* type_info);
+    uint32_t get_type_size(type_info_t const* type_info);
 
     // get alignment
-    uint32_t get_align(type_info_t const* type_info);
+    uint32_t get_type_align(type_info_t const* type_info);
 
     // get type name
-    char const* get_name(type_info_t const* type_info);
+    char const* get_type_name(type_info_t const* type_info);
 
     // get type hash
-    type_hash_t get_hash(type_info_t const* type_info);
+    type_hash_t get_type_hash(type_info_t const* type_info);
 
     // get field count
-    uint32_t get_field_count(type_info_t const* type_info);
+    uint32_t get_type_field_count(type_info_t const* type_info);
 
     // get field info
-    field_info_t const* get_field_info(type_info_t const* type_info, size_t field_index);
-    field_info_t* get_mutable_field_info(type_info_t* type_info, size_t field_index);
+    field_info_t const* get_type_field_info(type_info_t const* type_info, size_t field_index);
+    field_info_t* get_mutable_type_field_info(type_info_t* type_info, size_t field_index);
 
     // set hash for fields
-    void set_hash_for_fields(type_info_t* type_info, uint32_t type_hash_value2);
+    void update_hash_for_fields(type_info_t* type_info);
 }
 
 // interfaces for field_info_t
 namespace punk
 {
     // set the type of the field
-    void set_field_type(field_info_t* field_info, type_info_t* field_type);
+    void set_field_type(field_info_t* field_info, type_info_t const* field_type);
 
     // set the offset of the field
     void set_field_offset(field_info_t* field_info, uint32_t field_offset);
 
     // get the type of the field
-    type_info_t* get_field_type(field_info_t* field_info);
+    type_info_t const* get_field_type(field_info_t* field_info);
 
     // get the offset of the field
     uint32_t get_field_offset(field_info_t* field_info);

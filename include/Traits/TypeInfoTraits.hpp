@@ -28,19 +28,19 @@ namespace punk
             return get_demangle_name<type>();
         }
 
-        static constexpr size_t get_size() noexcept
+        static constexpr uint32_t get_size() noexcept
         {
             return sizeof(T);
         }
 
-        static constexpr size_t get_alignment() noexcept
+        static constexpr uint32_t get_alignment() noexcept
         {
             return alignof(T);
         }
 
-        static constexpr size_t get_field_count() noexcept
+        static constexpr uint32_t get_field_count() noexcept
         {
-            return size_t{ 0 };
+            return uint32_t{ 0 };
         }
 
         static uint32_t get_hash()
@@ -65,6 +65,8 @@ namespace punk
                 vtable.swap_func = [](void* lhs, void* rhs) { std::swap(*reinterpret_cast<T*>(lhs), *reinterpret_cast<T*>(rhs)); };
                 vtable.move_func = [](void* dst, void* src) { *reinterpret_cast<T*>(dst) = std::move(*reinterpret_cast<T const*>(src)); };
             }
+
+            return vtable;
         }
     };
 
@@ -80,6 +82,7 @@ namespace punk
     }
 
     PUNK_IMPLEMENT_PRIMATIVE_TYPE(bool, bool);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(char, char);
     PUNK_IMPLEMENT_PRIMATIVE_TYPE(uint8_t, uint8);
     PUNK_IMPLEMENT_PRIMATIVE_TYPE(sint8_t, sint8);
     PUNK_IMPLEMENT_PRIMATIVE_TYPE(uint16_t, uint16);
@@ -88,11 +91,16 @@ namespace punk
     PUNK_IMPLEMENT_PRIMATIVE_TYPE(sint32_t, sint32);
     PUNK_IMPLEMENT_PRIMATIVE_TYPE(float, float);
     PUNK_IMPLEMENT_PRIMATIVE_TYPE(double, double);
-    PUNK_IMPLEMENT_PRIMATIVE_TYPE(string, std::string);
-    PUNK_IMPLEMENT_PRIMATIVE_TYPE(wstring, std::wstring);
-    PUNK_IMPLEMENT_PRIMATIVE_TYPE(u8string, std::u8string);
-    PUNK_IMPLEMENT_PRIMATIVE_TYPE(u16string, std::u16string);
-    PUNK_IMPLEMENT_PRIMATIVE_TYPE(u32string, std::u32string);
+    //PUNK_IMPLEMENT_PRIMATIVE_TYPE(string, std::string);
+    //PUNK_IMPLEMENT_PRIMATIVE_TYPE(wstring, std::wstring);
+    //PUNK_IMPLEMENT_PRIMATIVE_TYPE(u8string, std::u8string);
+    //PUNK_IMPLEMENT_PRIMATIVE_TYPE(u16string, std::u16string);
+    //PUNK_IMPLEMENT_PRIMATIVE_TYPE(u32string, std::u32string);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(std::string, std::string);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(std::wstring, std::wstring);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(std::u8string, std::u8string);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(std::u16string, std::u16string);
+    PUNK_IMPLEMENT_PRIMATIVE_TYPE(std::u32string, std::u32string);
 
     template <typename T, size_t Size>
     struct type_info_traits<std::array<T, Size>> : 
@@ -166,7 +174,7 @@ namespace punk::detail
         using seq_tuple = tuple_remove_cvref_t<tied_tuple>;
         using offset_getter_check_type = boost::pfr::detail::offset_based_getter<T, seq_tuple>;
 
-        template <std::size_t idx>
+        template <size_t idx>
         static constexpr size_t offset() noexcept {
             constexpr boost::pfr::detail::tuple_of_aligned_storage_t<seq_tuple> layout{};
             return static_cast<size_t>(&boost::pfr::detail::sequence_tuple::get<idx>(layout).storage_[0]
@@ -184,16 +192,16 @@ namespace punk
         using type = typename primative_type_info_traits<T>::type;
         using reflect_info_t = reflect_info<type>;
 
-        static constexpr size_t field_count() noexcept
+        static constexpr uint32_t get_field_count() noexcept
         {
-            return reflect_info_t::field_count();
+            return static_cast<uint32_t>(reflect_info_t::field_count());
         }
 
         template <size_t I>
-        static constexpr auto field_type() noexcept -> tuple_element_t<I, T>;
+        static constexpr auto get_field_type() noexcept -> tuple_element_t<I, type>;
 
         template <size_t I>
-        static /*constexpr*/ size_t field_offset() noexcept
+        static /*constexpr*/ size_t get_field_offset() noexcept
         {
             return std::get<I>(reflect_info_t::member_offsets());
         }
@@ -204,16 +212,16 @@ namespace punk
     {
         using type = typename primative_type_info_traits<T>::type;
 
-        static constexpr size_t field_count() noexcept
+        static constexpr uint32_t get_field_count() noexcept
         {
-            return boost::pfr::tuple_size_v<type>;
+            return static_cast<uint32_t>(boost::pfr::tuple_size_v<type>);
         }
 
         template <size_t I>
-        static constexpr auto field_type() noexcept -> boost::pfr::tuple_element_t<I, type>;
+        static constexpr auto get_field_type() noexcept -> boost::pfr::tuple_element_t<I, type>;
 
         template <size_t I>
-        static /*constexpr*/ size_t field_offset() noexcept
+        static /*constexpr*/ size_t get_field_offset() noexcept
         {
             using offset_getter = detail::pfr_offset_getter<type>;
             return offset_getter::template offset<I>();
