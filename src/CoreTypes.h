@@ -27,7 +27,7 @@ namespace punk
         uint32_t                    alignment;
         string                      name;
         type_hash_t                 hash;
-        uint32_t                    flag;
+        uint32_t                    tag;
         type_vtable_t               vtable;
         vector<field_info_t>        fields;
     };

@@ -20,6 +20,26 @@ namespace punk
         uint64_t value;
     };
 
+    enum type_tag_t : uint32_t
+    {
+        type_tag_trivial            = 0x00,
+        type_tag_nontrivial         = 0x01,
+
+        type_tag_entity_component   = 0x02,
+        type_tag_data_component     = 0x04,
+        type_tag_cow_component      = 0x08,     // copy on write
+    };
+    inline type_tag_t operator| (type_tag_t const lhs, type_tag_t const rhs) noexcept
+    {
+        return static_cast<type_tag_t>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
+    }
+    inline type_tag_t& operator|= (type_tag_t& lhs, type_tag_t const rhs) noexcept
+    {
+        return lhs = lhs | rhs;
+    }
+    struct data_component_tag_t{};
+    struct cow_component_tag_t{};
+
     constexpr bool operator==(type_hash_t const& lhs, type_hash_t const& rhs) noexcept
     {
         return lhs.value == rhs.value;
@@ -63,7 +83,7 @@ namespace punk
 namespace punk
 {
     // create type info
-    type_info_t* create_type_info(char const* type_name, uint32_t size, uint32_t alignment, type_vtable_t const& type_vtable, uint32_t field_count);
+    type_info_t* create_type_info(char const* type_name, uint32_t size, uint32_t alignment, uint32_t type_tag, type_vtable_t const& type_vtable, uint32_t field_count);
 
     // delete type info
     void destroy_type_info(type_info_t* type_info) noexcept;
@@ -79,6 +99,9 @@ namespace punk
 
     // get type hash
     type_hash_t get_type_hash(type_info_t const* type_info);
+
+    // get type tag
+    type_tag_t get_type_tag(type_info_t const* type_info);
 
     // get field count
     uint32_t get_type_field_count(type_info_t const* type_info);

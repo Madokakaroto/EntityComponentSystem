@@ -52,7 +52,7 @@ namespace punk
     struct tuple_element
     {
         using reflect_info_t = reflect_info<T>;
-        using type = decltype(type_of_pmd(std::get<I>(reflect_info_t::members())));
+        using type = decltype(owner_type_of_pmd(std::get<I>(reflect_info_t::members())));
     };
     template <size_t I, typename T>
     using tuple_element_t = typename tuple_element<I, T>::type;

@@ -49,6 +49,29 @@ namespace punk
             return hash_memory(type_name.c_str(), type_name.length());
         }
 
+        static constexpr type_tag_t get_tag() noexcept
+        {
+            type_tag_t tag = type_tag_trivial;
+            if constexpr(!std::is_trivially_default_constructible_v<type>)
+            {
+                tag = type_tag_nontrivial;
+            }
+            if constexpr(has_component_tag<T>)
+            {
+                tag |= type_tag_entity_component;
+                using component_tag_t = traits_component_tag_t<T>;
+                if constexpr(std::same_as<component_tag_t, data_component_tag_t>)
+                {
+                    tag |= type_tag_data_component;
+                }
+                else if constexpr(std::same_as<component_tag_t, cow_component_tag_t>)
+                {
+                    tag |= type_tag_cow_component;
+                }
+            }
+            return tag;
+        }
+
         static auto get_vtable() noexcept -> type_vtable_t
         {
             type_vtable_t vtable = { nullptr, nullptr, nullptr, nullptr, nullptr };

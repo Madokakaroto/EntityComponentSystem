@@ -7,14 +7,14 @@
 namespace punk
 {
     // create type info
-    type_info_t* create_type_info(char const* type_name, uint32_t size, uint32_t alignment, type_vtable_t const& type_vtable, uint32_t field_count)
+    type_info_t* create_type_info(char const* type_name, uint32_t size, uint32_t alignment, uint32_t type_tag, type_vtable_t const& type_vtable, uint32_t field_count)
     {
         auto type_info = std::make_unique<type_info_t>();
         type_info->size = size;
         type_info->alignment = alignment;
         type_info->name = type_name;
         type_info->hash.components.value1 = hash_memory(type_name, std::strlen(type_name));
-        type_info->flag = 0;
+        type_info->tag = type_tag;
         type_info->vtable = type_vtable;
         type_info->fields.resize(field_count);
         return type_info.release();
@@ -51,6 +51,11 @@ namespace punk
     type_hash_t get_type_hash(type_info_t const* type_info)
     {
        return type_info ? type_info->hash : type_hash_t{ uint64_t{0} };
+    }
+
+    type_tag_t get_type_tag(type_info_t const* type_info)
+    {
+        return type_info ? static_cast<type_tag_t>(type_info->tag) : type_tag_trivial;
     }
 
     // get field count

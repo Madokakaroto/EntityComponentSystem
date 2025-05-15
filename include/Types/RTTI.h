@@ -24,6 +24,7 @@ namespace punk
         using type_info_ptr = std::unique_ptr<type_info_t, type_info_deleter>;
 
     public:
+        runtime_type_system() = default;
         runtime_type_system(runtime_type_system const&) = delete;
         runtime_type_system& operator=(runtime_type_system const&) = delete;
         runtime_type_system(runtime_type_system&&) = delete;
@@ -63,6 +64,7 @@ namespace punk
                     type_name.c_str(),
                     type_info_traits_t::get_size(),
                     type_info_traits_t::get_alignment(),
+                    type_info_traits_t::get_tag(),
                     type_info_traits_t::get_vtable(),
                     type_info_traits_t::get_field_count())
             };
@@ -128,6 +130,7 @@ namespace punk
                     type_name.c_str(),
                     type_info_traits_t::get_size(),
                     type_info_traits_t::get_alignment(),
+                    type_info_traits_t::get_tag(),
                     type_info_traits_t::get_vtable(),
                     type_info_traits_t::get_field_count())
             };

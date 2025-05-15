@@ -3,24 +3,38 @@
 #include <type_traits>
 
 // std extension
-namespace std
+namespace punk
 {
     template <bool Test, typename T = void>
-    using disable_if = enable_if<!Test, T>;
+    using disable_if = std::enable_if<!Test, T>;
     template <bool Test, typename T = void>
     using disable_if_t = typename disable_if<Test, T>::type;
 }
 
+#define PUNK_TRAITS_MEMBER_TYPE(member)                         \
+template <typename T>                                           \
+concept has_##member = requires { typename T::member; };        \
+template <typename T>                                           \
+struct traits_##member                                          \
+{                                                               \
+    using type = void;                                          \
+};                                                              \
+template <typename T> requires has_##member<T>                  \
+struct traits_##member<T>                                       \
+{                                                               \
+    using type = typename T::member;                            \
+};                                                              \
+template <typename T>                                           \
+using traits_##member##_t = typename traits_##member<T>::type;
+
 namespace punk
 {
-    template <typename T>
-    using element_type_t = typename T::element_type;
-
-    template <typename T>
-    using value_type_t = typename T::value_type;
+    PUNK_TRAITS_MEMBER_TYPE(element_type);
+    PUNK_TRAITS_MEMBER_TYPE(value_type);
+    PUNK_TRAITS_MEMBER_TYPE(component_tag);
 
     template <typename T, typename S>
-    constexpr auto type_of_pmd(T S::*) noexcept -> T;
+    constexpr auto owner_type_of_pmd(T S::*) noexcept -> T;
 }
 
 // boolean meta-functions
@@ -96,4 +110,12 @@ namespace punk
 
     template <typename T>
     concept enumerable = std::is_enum_v<T>;
+
+    template <typename T>
+    concept smart_pointer = requires(T ptr)
+    {
+        { *ptr } -> std::convertible_to<T>;
+        { ptr.get() } -> std::convertible_to<T>;
+        { static_cast<bool>(ptr) };
+    };
 }
