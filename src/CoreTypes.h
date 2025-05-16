@@ -41,6 +41,7 @@ namespace punk
 
     using component_index_t = handle<component_info_t, uint16_t>;
 
+    using archetype_delete_delegate_t = std::function<void(archetype_t*)>;
     struct archetype_t
     {
         static constexpr size_t npos = (std::numeric_limits<size_t>::max)();
@@ -48,8 +49,6 @@ namespace punk
         uint32_t                    hash;
         uint32_t                    capacity_in_chunk;
         vector<component_info_t>    components;
+        archetype_delete_delegate_t on_delete;
     };
-
-    using archetype_ptr = std::shared_ptr<archetype_t>;
-    using archetype_weak_ptr = std::weak_ptr<archetype_t>;
 }

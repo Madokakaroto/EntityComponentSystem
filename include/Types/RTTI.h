@@ -175,6 +175,10 @@ namespace punk
 {
     class runtime_archetype_system
     {
+    protected:
+        explicit runtime_archetype_system(runtime_type_system* runtime_type_system)
+            : runtime_type_system_(runtime_type_system) {}
+
     public:
         runtime_archetype_system(runtime_archetype_system const&) = delete;
         runtime_archetype_system& operator=(runtime_archetype_system const&) = delete;
@@ -186,12 +190,12 @@ namespace punk
         static runtime_archetype_system* create_instance(runtime_type_system* rtt_system);
 
     public:
-        virtual archetype_t const* get_archetype(uint32_t hash) = 0;
-        virtual archetype_t const* get_or_create_archetype(type_info_t const** component_type_infos, size_t count) = 0;
-        virtual archetype_t const* archetype_include_components(archetype_t const* archetype, type_info_t const** component_type_infos, size_t count) = 0;
-        virtual archetype_t const* archetype_exclude_components(archetype_t const* archetype, type_info_t const** component_type_infos, size_t count) = 0;
+        virtual archetype_ptr get_archetype(uint32_t hash) = 0;
+        virtual archetype_ptr get_or_create_archetype(type_info_t const** component_type_infos, size_t count) = 0;
+        virtual archetype_ptr archetype_include_components(archetype_ptr const& archetype, type_info_t const** component_type_infos, size_t count) = 0;
+        virtual archetype_ptr archetype_exclude_components(archetype_ptr const& archetype, type_info_t const** component_type_infos, size_t count) = 0;
 
     protected:
-        runtime_archetype_system* runtime_type_system_;
+        runtime_type_system* runtime_type_system_;
     };
 }

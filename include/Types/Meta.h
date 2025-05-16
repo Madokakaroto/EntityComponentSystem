@@ -76,6 +76,10 @@ namespace punk
 
     // a group of entity components
     struct component_group_t;
+
+    // TODO ... abi
+    using archetype_ptr = std::shared_ptr<archetype_t>;
+    using archetype_weak = std::weak_ptr<archetype_t>;
 }
 
 /// TODO ... not all the interfaces below are public, hide the implementation specific ones
@@ -128,4 +132,9 @@ namespace punk
 
     // get the offset of the field
     uint32_t get_field_offset(field_info_t* field_info);
+}
+
+namespace punk
+{
+    void destroy_archetype(archetype_t* archetype);
 }

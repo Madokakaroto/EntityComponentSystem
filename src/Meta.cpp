@@ -130,7 +130,23 @@ namespace punk
 
 namespace punk
 {
-    class runtime_type_system_impl : public runtime_type_system
+    void destroy_archetype(archetype_t* archetype)
+    {
+        if(archetype)
+        {
+            if(archetype->on_delete)
+            {
+                archetype->on_delete(archetype);
+            }
+
+            delete archetype;
+        }
+    }
+}
+
+namespace punk
+{
+    class runtime_type_system_impl final : public runtime_type_system
     {
     public:
         using spin_lock_t = async_simple::coro::SpinLock;
@@ -208,5 +224,52 @@ namespace punk
     runtime_type_system* runtime_type_system::create_instance()
     {
         return new runtime_type_system_impl{};
+    }
+}
+
+namespace punk
+{
+    class runtime_archetype_system_impl final : public runtime_archetype_system
+    {
+    public:
+        using archetype_container = std::unordered_map<uint32_t, archetype_weak>;
+
+    private:
+
+    public:
+        explicit runtime_archetype_system_impl(runtime_type_system* runtime_type_system)
+            : runtime_archetype_system(runtime_type_system) {}
+
+    public:
+        virtual archetype_ptr get_archetype(uint32_t hash) override
+        {
+            return nullptr;
+        }
+
+        virtual archetype_ptr get_or_create_archetype(type_info_t const** component_type_infos, size_t count) override
+        {
+            return nullptr;
+        }
+
+        virtual archetype_ptr archetype_include_components(archetype_ptr const& archetype, type_info_t const** component_type_infos, size_t count) override
+        {
+            return nullptr;
+        }
+
+        virtual archetype_ptr archetype_exclude_components(archetype_ptr const& archetype, type_info_t const** component_type_infos, size_t count) override
+        {
+            return nullptr;
+        }
+    };
+
+
+    runtime_archetype_system* runtime_archetype_system::create_instance(runtime_type_system* rtt_system)
+    {
+        assert(rtt_system);
+        if(!rtt_system)
+        {
+            return nullptr;
+        }
+        return new runtime_archetype_system_impl{ rtt_system };
     }
 }
