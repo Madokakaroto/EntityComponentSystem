@@ -10,3 +10,6 @@
 [submodule "dependencies/asio"]
 	path = dependencies/asio
 	url = https://github.com/chriskohlhoff/asio.git
+[submodule "dependencies/plf_hive"]
+	path = dependencies/plf_hive
+	url = https://github.com/mattreecebentley/plf_hive
