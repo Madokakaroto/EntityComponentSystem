@@ -20,6 +20,11 @@ namespace punk
         uint64_t value;
     };
 
+    constexpr auto operator<=>(type_hash_t const& lhs, type_hash_t const& rhs) noexcept
+    {
+        return lhs.value <=> rhs.value;
+    }
+
     enum type_tag_t : uint32_t
     {
         type_tag_trivial            = 0x00,
@@ -39,16 +44,6 @@ namespace punk
     }
     struct data_component_tag_t{};
     struct cow_component_tag_t{};
-
-    constexpr bool operator==(type_hash_t const& lhs, type_hash_t const& rhs) noexcept
-    {
-        return lhs.value == rhs.value;
-    }
-
-    constexpr bool operator!=(type_hash_t const& lhs, type_hash_t const& rhs) noexcept
-    {
-        return lhs.value != rhs.value;
-    }
 
     struct type_vtable_t
     {
@@ -132,9 +127,4 @@ namespace punk
 
     // get the offset of the field
     uint32_t get_field_offset(field_info_t* field_info);
-}
-
-namespace punk
-{
-    void destroy_archetype(archetype_t* archetype);
 }

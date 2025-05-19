@@ -173,6 +173,22 @@ namespace punk
 
 namespace punk
 {
+    template <typename ... Args>
+    concept atleast_one_component_types = requires
+    {
+        // at least one
+        sizeof...(Args) > 0;
+
+        // all types are distinct
+        std::negation_v<tuple_has_repeated_types<Args...>>;
+
+        // all types are reflectable
+        (reflectable<Args> && ...);
+
+        // all types are component types
+        (((type_info_traits<Args>::get_tag() & type_tag_entity_component) != 0) && ...);
+    };
+
     class runtime_archetype_system
     {
     protected:
@@ -191,9 +207,32 @@ namespace punk
 
     public:
         virtual archetype_ptr get_archetype(uint32_t hash) = 0;
-        virtual archetype_ptr get_or_create_archetype(type_info_t const** component_type_infos, size_t count) = 0;
         virtual archetype_ptr archetype_include_components(archetype_ptr const& archetype, type_info_t const** component_type_infos, size_t count) = 0;
         virtual archetype_ptr archetype_exclude_components(archetype_ptr const& archetype, type_info_t const** component_type_infos, size_t count) = 0;
+
+        // runtime version of interface get_or_create_archetype
+        archetype_ptr get_or_create_archetype(type_info_t const** component_type_infos, size_t count);
+        // generic version of interface get_or_create_archetype
+        template <typename ... Args> requires atleast_one_component_types<Args...>
+        archetype_ptr get_or_create_archetype()
+        {
+            assert(runtime_type_system_);
+
+            // collect all runtime type information
+            constexpr size_t count = sizeof...(Args);
+            std::array<type_info_t const*, count> type_infos = { runtime_type_system_->get_or_create_type_info<Args>() ... };
+
+            // sort types by hash
+            std::stable_sort(type_infos.begin(), type_infos.end(),
+                [](auto const* lhs, auto const* rhs)
+                {
+                    return get_type_hash(lhs) < get_type_hash(rhs);
+                });
+            return get_or_create_archetype_impl(type_infos.data(), count);
+        }
+
+    protected:
+        virtual archetype_ptr get_or_create_archetype_impl(type_info_t const** sorted_component_type_infos, size_t count) = 0;
 
     protected:
         runtime_type_system* runtime_type_system_;

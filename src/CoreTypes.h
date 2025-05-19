@@ -48,7 +48,7 @@ namespace punk
 
         uint32_t                    hash;
         uint32_t                    capacity_in_chunk;
+        bool                        registered;
         vector<component_info_t>    components;
-        archetype_delete_delegate_t on_delete;
     };
 }

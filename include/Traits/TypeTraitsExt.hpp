@@ -118,4 +118,16 @@ namespace punk
         { ptr.get() } -> std::convertible_to<T>;
         { static_cast<bool>(ptr) };
     };
+
+    template <typename ... Args>
+    struct tuple_has_repeated_types;
+    template <typename T>
+    struct tuple_has_repeated_types<T> : std::false_type{};
+    template <typename T, typename ... Args>
+    struct tuple_has_repeated_types<T, T, Args...> : std::true_type{};
+    template <typename T, typename P, typename ... Args>
+    struct tuple_has_repeated_types<T, P, Args...> : std::bool_constant<std::disjunction_v<
+        tuple_has_repeated_types<T, Args...>, tuple_has_repeated_types<P, Args...> >>{};
+    template <typename ... Args>
+    constexpr bool tuple_has_repeated_types_v = tuple_has_repeated_types<Args...>::value;
 }
