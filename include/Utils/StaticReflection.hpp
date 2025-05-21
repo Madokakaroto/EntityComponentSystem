@@ -2,7 +2,7 @@
 #include "boost/preprocessor.hpp"
 #include "boost/pfr.hpp"
 #include "Traits/TypeTraitsExt.hpp"
-#include "Types/Forward.hpp"
+#include "Types/Attribute.hpp"
 
 namespace punk
 {

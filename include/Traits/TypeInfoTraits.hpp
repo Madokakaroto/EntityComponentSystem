@@ -23,6 +23,11 @@ namespace punk
     {
         using type = T;
 
+        static constexpr bool is_incomplete_type() noexcept
+        {
+            return incomplete_type<type>;
+        }
+
         static std::string get_type_name()
         {
             return get_demangle_name<type>();
@@ -30,12 +35,26 @@ namespace punk
 
         static constexpr uint32_t get_size() noexcept
         {
-            return sizeof(T);
+            if constexpr(is_incomplete_type())
+            {
+                return 0;
+            }
+            else
+            {
+                return sizeof(T);
+            }
         }
 
         static constexpr uint32_t get_alignment() noexcept
         {
-            return alignof(T);
+            if constexpr(is_incomplete_type())
+            {
+                return 0;
+            }
+            else
+            {
+                return alignof(T);
+            }
         }
 
         static constexpr uint32_t get_field_count() noexcept
@@ -49,30 +68,7 @@ namespace punk
             return hash_memory(type_name.c_str(), type_name.length());
         }
 
-        static constexpr type_tag_t get_tag() noexcept
-        {
-            type_tag_t tag = type_tag_trivial;
-            if constexpr(!std::is_trivially_default_constructible_v<type>)
-            {
-                tag = type_tag_nontrivial;
-            }
-            if constexpr(has_component_tag<T>)
-            {
-                tag |= type_tag_entity_component;
-                using component_tag_t = traits_component_tag_t<T>;
-                if constexpr(std::same_as<component_tag_t, data_component_tag_t>)
-                {
-                    tag |= type_tag_data_component;
-                }
-                else if constexpr(std::same_as<component_tag_t, cow_component_tag_t>)
-                {
-                    tag |= type_tag_cow_component;
-                }
-            }
-            return tag;
-        }
-
-        static auto get_vtable() noexcept -> type_vtable_t
+        static constexpr auto get_vtable() noexcept -> type_vtable_t
         {
             type_vtable_t vtable = { nullptr, nullptr, nullptr, nullptr, nullptr };
 
@@ -91,6 +87,21 @@ namespace punk
 
             return vtable;
         }
+
+        static constexpr uint32_t get_attribute_count() noexcept
+        {
+            if constexpr(has_attributes<type>)
+            {
+                return std::tuple_size_v<typename type::attributes>;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        template <size_t I>
+        static constexpr auto get_attribute() noexcept -> decltype(get_attribute<I, type>());
     };
 
     #define PUNK_IMPLEMENT_PRIMATIVE_TYPE(Type, TypeName)                   \

@@ -31,7 +31,7 @@ namespace punk
 {
     PUNK_TRAITS_MEMBER_TYPE(element_type);
     PUNK_TRAITS_MEMBER_TYPE(value_type);
-    PUNK_TRAITS_MEMBER_TYPE(component_tag);
+    PUNK_TRAITS_MEMBER_TYPE(attributes);
 
     template <typename T, typename S>
     constexpr auto owner_type_of_pmd(T S::*) noexcept -> T;
@@ -118,6 +118,14 @@ namespace punk
         { ptr.get() } -> std::convertible_to<T>;
         { static_cast<bool>(ptr) };
     };
+
+    template <typename T>
+    concept sizeofable = requires
+    {
+        { sizeof(T) } -> std::convertible_to<size_t>;
+    };
+    template <typename T>
+    concept incomplete_type = !sizeofable<T>;
 
     template <typename ... Args>
     struct tuple_has_repeated_types;

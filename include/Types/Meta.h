@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Types/Forward.hpp"
+#include "Types/Attribute.hpp"
 #include "Types/Handle.hpp"
 
 namespace punk
@@ -25,26 +25,6 @@ namespace punk
         return lhs.value <=> rhs.value;
     }
 
-    enum type_tag_t : uint32_t
-    {
-        type_tag_trivial            = 0x00,
-        type_tag_nontrivial         = 0x01,
-
-        type_tag_entity_component   = 0x02,
-        type_tag_data_component     = 0x04,
-        type_tag_cow_component      = 0x08,     // copy on write
-    };
-    inline type_tag_t operator| (type_tag_t const lhs, type_tag_t const rhs) noexcept
-    {
-        return static_cast<type_tag_t>(static_cast<uint32_t>(lhs) | static_cast<uint32_t>(rhs));
-    }
-    inline type_tag_t& operator|= (type_tag_t& lhs, type_tag_t const rhs) noexcept
-    {
-        return lhs = lhs | rhs;
-    }
-    struct data_component_tag_t{};
-    struct cow_component_tag_t{};
-
     struct type_vtable_t
     {
         void(*constructor)(void*);
@@ -66,6 +46,9 @@ namespace punk
     // runtime information about a member in a specific cpp type
     struct field_info_t;
 
+    // runtime information about an attribute in a specific cpp type
+    struct attribute_info_t;
+
     // runtime information about an entity component
     struct component_info_t;
 
@@ -82,7 +65,13 @@ namespace punk
 namespace punk
 {
     // create type info
-    type_info_t* create_type_info(char const* type_name, uint32_t size, uint32_t alignment, uint32_t type_tag, type_vtable_t const& type_vtable, uint32_t field_count);
+    type_info_t* create_type_info(
+        char const* type_name,
+        uint32_t size,
+        uint32_t alignment,
+        type_vtable_t const& type_vtable,
+        uint32_t field_count,
+        uint32_t attribute_count);
 
     // delete type info
     void destroy_type_info(type_info_t* type_info) noexcept;
@@ -99,15 +88,20 @@ namespace punk
     // get type hash
     type_hash_t get_type_hash(type_info_t const* type_info);
 
-    // get type tag
-    type_tag_t get_type_tag(type_info_t const* type_info);
-
     // get field count
     uint32_t get_type_field_count(type_info_t const* type_info);
 
     // get field info
     field_info_t const* get_type_field_info(type_info_t const* type_info, size_t field_index);
     field_info_t* get_mutable_type_field_info(type_info_t* type_info, size_t field_index);
+
+    // get attribute count
+    uint32_t get_type_attribute_count(type_info_t const* type_info);
+
+    // get attribute info
+    attribute_info_t const* query_type_attribute_info(type_info_t const* type_info, type_info_t const* attribute_type_info);
+    attribute_info_t const* get_type_attribute_info(type_info_t* type_info, size_t field_index);
+    attribute_info_t* get_mutable_type_attribute_info(type_info_t* type_info, size_t field_index);
 
     // set hash for fields
     void update_hash_for_fields(type_info_t* type_info);
@@ -127,4 +121,11 @@ namespace punk
 
     // get the offset of the field
     uint32_t get_field_offset(field_info_t* field_info);
+}
+
+// interface for attribute
+namespace punk
+{
+    void set_attribute_type(attribute_info_t* attribute_info, type_info_t const* attribute_type);
+    void set_attribute_value(attribute_info_t* attribute_info, type_info_t const* attribute_value);
 }

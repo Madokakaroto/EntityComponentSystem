@@ -64,15 +64,14 @@ namespace punk
                     type_name.c_str(),
                     type_info_traits_t::get_size(),
                     type_info_traits_t::get_alignment(),
-                    type_info_traits_t::get_tag(),
                     type_info_traits_t::get_vtable(),
-                    type_info_traits_t::get_field_count())
+                    type_info_traits_t::get_field_count(),
+                    type_info_traits_t::get_attribute_count())
             };
 
             // initialize field
             if constexpr (type_info_traits_t::get_field_count() > 0)
             {
-                //initialize_field_info<T>(new_type_info.get(), std::make_index_sequence<type_info_traits_t::get_field_count()>{});
                 static_for<0, type_info_traits_t::get_field_count()>(
                     [&]<size_t Index>()
                 {
@@ -93,6 +92,33 @@ namespace punk
 
                 // initialize type hash component2
                 update_hash_for_fields(new_type_info.get());
+            }
+
+            // initialize attributes
+            if constexpr(type_info_traits_t::get_attribute_count() > 0)
+            {
+                static_for<0, type_info_traits_t::get_attribute_count()>(
+                    [&]<size_t Index>()
+                {
+                    // get attribute info to initialize
+                    auto* attribute_info = get_mutable_type_attribute_info(new_type_info.get(), Index);
+                    assert(attribute_info);
+
+                    // get type of the attribute
+                    using attribute_t = decltype(type_info_traits_t::template get_attribute<Index>());
+
+                    // set attribute type info
+                    using attribute_type_t = std::tuple_element_t<0, attribute_t>;
+                    auto* attribute_type = get_or_create_type_info<attribute_type_t>();
+                    assert(attribute_type);
+                    set_attribute_type(attribute_info, attribute_type);
+
+                    // set attribute value info
+                    using attribute_value_t = std::tuple_element_t<1, attribute_t>;
+                    auto* attribute_value = get_or_create_type_info<attribute_value_t>();
+                    assert(attribute_type);
+                    set_attribute_value(attribute_info, attribute_value);
+                });
             }
 
             // 2-phrase commit
@@ -130,12 +156,12 @@ namespace punk
                     type_name.c_str(),
                     type_info_traits_t::get_size(),
                     type_info_traits_t::get_alignment(),
-                    type_info_traits_t::get_tag(),
                     type_info_traits_t::get_vtable(),
-                    type_info_traits_t::get_field_count())
+                    type_info_traits_t::get_field_count(),
+                    type_info_traits_t::get_attribute_count())
             };
 
-            // initialize field
+            // async nitialize field
             if constexpr (type_info_traits_t::get_field_count() > 0)
             {
                 co_await async_static_for<0, type_info_traits_t::get_field_count()>(
@@ -158,6 +184,33 @@ namespace punk
 
                 // initialize type hash component2
                 update_hash_for_fields(new_type_info.get());
+            }
+
+            // async initialize attributes
+            if constexpr(type_info_traits_t::get_attribute_count() > 0)
+            {
+                co_await async_static_for<0, type_info_traits_t::get_attribute_count()>(
+                    [&]<size_t Index>() -> Lazy<void>
+                {
+                    // get attribute info to initialize
+                    auto* attribute_info = get_mutable_type_attribute_info(new_type_info.get(), Index);
+                    assert(attribute_info);
+
+                    // get type of the attribute
+                    using attribute_t = decltype(type_info_traits_t::template get_attribute<Index>());
+
+                    // set attribute type info
+                    using attribute_type_t = std::tuple_element_t<0, attribute_t>;
+                    auto* attribute_type = co_await async_get_or_create_type_info<attribute_type_t>();
+                    assert(attribute_type);
+                    set_attribute_type(attribute_info, attribute_type);
+
+                    // set attribute value info
+                    using attribute_value_t = std::tuple_element_t<1, attribute_t>;
+                    auto* attribute_value = co_await async_get_or_create_type_info<attribute_value_t>();
+                    assert(attribute_type);
+                    set_attribute_value(attribute_info, attribute_value);
+                });
             }
 
             // 2-phrase commit
@@ -186,7 +239,7 @@ namespace punk
         (reflectable<Args> && ...);
 
         // all types are component types
-        (((type_info_traits<Args>::get_tag() & type_tag_entity_component) != 0) && ...);
+        //(((type_info_traits<Args>::get_tag() & type_tag_entity_component) != 0) && ...);
     };
 
     class runtime_archetype_system

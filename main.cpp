@@ -4,12 +4,23 @@
 #include "src/CoreTypes.h"
 
 #include "Utils/StaticReflection.hpp"
+#include "Types/Attribute.hpp"
 #include "Types/RTTI.h"
 
 class foo {};
+struct attribute_entity_component{};
+struct attribute_component_group{};
+struct data_component_tag{};
+struct default_component_group{};
 
 struct fee
 {
+    PUNK_DEFINE_ATTRIBUTES
+    (
+        PUNK_ATTRIBUTE_ITEM(entity_component, data_component_tag),
+        PUNK_ATTRIBUTE_ITEM(component_group, default_component_group)
+    );
+
     double double_value;
     int int_value;
 };
