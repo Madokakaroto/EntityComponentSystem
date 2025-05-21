@@ -95,14 +95,18 @@ namespace punk
             return nullptr;
         }
 
-        //if (std::any_of(component_type_infos, component_type_infos + count,
-        //    [](auto const* type_info)
-        //    {
-        //        return type_info == nullptr || (get_type_tag(type_info) & type_tag_entity_component) == 0;
-        //    }))
-        //{
-        //    return nullptr;
-        //}
+        assert(runtime_type_system_);
+        auto* entity_component_attribute = runtime_type_system_->get_or_create_type_info<PUNK_ATTRIBUTE_TYPE(entity_component)>();
+        assert(entity_component_attribute);
+
+        if (std::any_of(component_type_infos, component_type_infos + count,
+            [=](auto const* type_info)
+            {
+                return query_type_attribute_info(type_info, entity_component_attribute) == nullptr;
+            }))
+        {
+            return nullptr;
+        }
 
         std::stable_sort(component_type_infos, component_type_infos + count,
             [](auto const* lhs, auto const* rhs)

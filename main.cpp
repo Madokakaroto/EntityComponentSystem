@@ -8,17 +8,15 @@
 #include "Types/RTTI.h"
 
 class foo {};
-struct attribute_entity_component{};
-struct attribute_component_group{};
 struct data_component_tag{};
 struct default_component_group{};
 
 struct fee
 {
-    PUNK_DEFINE_ATTRIBUTES
+    PUNK_MAKE_ATTRIBUTES
     (
-        PUNK_ATTRIBUTE_ITEM(entity_component, data_component_tag),
-        PUNK_ATTRIBUTE_ITEM(component_group, default_component_group)
+        PUNK_ATTRIBUTE_ITEM(PUNK_ATTRIBUTE_TYPE(entity_component), data_component_tag),
+        PUNK_ATTRIBUTE_ITEM(PUNK_ATTRIBUTE_TYPE(component_group), default_component_group)
     );
 
     double double_value;

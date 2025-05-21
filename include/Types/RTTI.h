@@ -237,9 +237,6 @@ namespace punk
 
         // all types are reflectable
         (reflectable<Args> && ...);
-
-        // all types are component types
-        //(((type_info_traits<Args>::get_tag() & type_tag_entity_component) != 0) && ...);
     };
 
     class runtime_archetype_system
