@@ -90,18 +90,11 @@ namespace punk
 
         static constexpr uint32_t get_attribute_count() noexcept
         {
-            if constexpr(has_attributes<type>)
-            {
-                return std::tuple_size_v<typename type::attributes>;
-            }
-            else
-            {
-                return 0;
-            }
+            return attribute_count<type>();
         }
 
         template <size_t I>
-        static constexpr auto get_attribute() noexcept -> decltype(get_attribute<I, type>());
+        static constexpr auto get_attribute() noexcept -> decltype(attribute_type<I, type>());
     };
 
     #define PUNK_IMPLEMENT_PRIMATIVE_TYPE(Type, TypeName)                   \

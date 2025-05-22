@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Types/Attribute.hpp"
+#include "Types/Forward.hpp"
 #include "Types/Handle.hpp"
 
 namespace punk

@@ -2,8 +2,8 @@
 #include "boost/preprocessor.hpp"
 #include "boost/pfr.hpp"
 #include "Traits/TypeTraitsExt.hpp"
-#include "Types/Attribute.hpp"
 
+// type reflect info
 namespace punk
 {
     template <typename T>
@@ -100,6 +100,61 @@ namespace punk
         }
     };
 }
+
+// attribute type
+#define PUNK_ATTRIBUTE_TYPE_2(ns, type) ns::attribute_##type##_t
+#define PUNK_ATTRIBUTE_TYPE_1(type) PUNK_ATTRIBUTE_TYPE_2(punk, type)
+#define PUNK_ATTRIBUTE_TYPE(...) BOOST_PP_CAT(BOOST_PP_OVERLOAD(PUNK_ATTRIBUTE_TYPE_, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
+#define PUNK_DEFINE_ATTRIBUTE_TYPE(type) struct attribute_##type##_t{};
+// attribute value
+#define PUNK_ATTRIBUTE_VALUE_2(ns, value) ns::value
+#define PUNK_ATTRIBUTE_VALUE_1(value) PUNK_ATTRIBUTE_VALUE_2(punk, value)
+#define PUNK_ATTRIBUTE_VALUE(...) BOOST_PP_CAT(BOOST_PP_OVERLOAD(PUNK_ATTRIBUTE_VALUE_, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
+// attribute item type_attribute<attribute_type, attribute_value>
+#define PUNK_ATTRIBUTE_ITEM_4(nst, type, nsv, value) std::pair<PUNK_ATTRIBUTE_TYPE(nst, type) BOOST_PP_COMMA() PUNK_ATTRIBUTE_VALUE(nsv, value)>
+#define PUNK_ATTRIBUTE_ITEM_3(ns, type, value) PUNK_ATTRIBUTE_ITEM_4(ns, type, ns, value)
+#define PUNK_ATTRIBUTE_ITEM_2(type, value) PUNK_ATTRIBUTE_ITEM_3(punk, type, value)
+#define PUNK_ATTRIBUTE_ITEM(...) BOOST_PP_CAT(BOOST_PP_OVERLOAD(PUNK_ATTRIBUTE_ITEM_, __VA_ARGS__)(__VA_ARGS__), BOOST_PP_EMPTY())
+// attributes
+#define PUNK_MAKE_ATTRIBUTE(r, data, i, t) BOOST_PP_COMMA_IF(i) PUNK_ATTRIBUTE_ITEM(BOOST_PP_TUPLE_REM_CTOR(t))
+#define PUNK_MAKE_ATTRIBUTES(...) using attributes = std::tuple<BOOST_PP_SEQ_FOR_EACH_I(PUNK_MAKE_ATTRIBUTE, _, BOOST_PP_VARIADIC_TO_SEQ(__VA_ARGS__))>
+
+// attribute info
+namespace punk
+{
+    template <typename T>
+    struct attribute_info;
+
+    template <typename T> requires(has_attributes<attribute_info<T>>)
+    constexpr uint32_t attribute_count() noexcept
+    {
+        return std::tuple_size_v<typename attribute_info<T>::attributes>;
+    }
+
+    template <typename T> requires(!has_attributes<attribute_info<T>>)
+    constexpr uint32_t attribute_count() noexcept
+    {
+        return 0;
+    }
+
+    template <size_t I, typename T> requires(has_attributes<attribute_info<T>>)
+    constexpr auto attribute_type() noexcept -> std::tuple_element_t<I, typename attribute_info<T>::attributes>;
+
+    template <size_t I, typename T> requires(!has_attributes<attribute_info<T>>)
+    constexpr void attribute_type() noexcept;
+
+    PUNK_DEFINE_ATTRIBUTE_TYPE(component_tag);
+    struct data_component_tag_t{};
+    struct cow_component_tag_t{};
+    PUNK_DEFINE_ATTRIBUTE_TYPE(component_group);
+    struct default_component_group_t{};
+}
+
+#define PUNK_ATTRIBUTE(CLASS, ...) \
+template <> struct ::punk::attribute_info<CLASS> \
+{\
+    PUNK_MAKE_ATTRIBUTES(__VA_ARGS__); \
+};
 
 // implementation detail for PUNK_REFLECT_MEMBERS
 #define PUNK_REFLECT_APPLY_MACRO(macro) macro

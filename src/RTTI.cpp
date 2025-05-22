@@ -96,7 +96,7 @@ namespace punk
         }
 
         assert(runtime_type_system_);
-        auto* entity_component_attribute = runtime_type_system_->get_or_create_type_info<PUNK_ATTRIBUTE_TYPE(entity_component)>();
+        auto* entity_component_attribute = runtime_type_system_->get_or_create_type_info<PUNK_ATTRIBUTE_TYPE(component_tag)>();
         assert(entity_component_attribute);
 
         if (std::any_of(component_type_infos, component_type_infos + count,

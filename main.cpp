@@ -4,21 +4,12 @@
 #include "src/CoreTypes.h"
 
 #include "Utils/StaticReflection.hpp"
-#include "Types/Attribute.hpp"
 #include "Types/RTTI.h"
 
 class foo {};
-struct data_component_tag{};
-struct default_component_group{};
 
 struct fee
 {
-    PUNK_MAKE_ATTRIBUTES
-    (
-        PUNK_ATTRIBUTE_ITEM(PUNK_ATTRIBUTE_TYPE(entity_component), data_component_tag),
-        PUNK_ATTRIBUTE_ITEM(PUNK_ATTRIBUTE_TYPE(component_group), default_component_group)
-    );
-
     double double_value;
     int int_value;
 };
@@ -36,6 +27,9 @@ struct alignas(8) test_align
     double double_value;
     std::string str_value;
 };
+PUNK_ATTRIBUTE(test_align,
+    (component_tag, data_component_tag_t),
+    (component_group, default_component_group_t));
 
 async_simple::coro::Lazy<int> get_43() {
     std::cout << "run with ::operator new/delete" << '\n';
