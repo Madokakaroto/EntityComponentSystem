@@ -165,12 +165,22 @@ namespace punk
 
 namespace punk
 {
+    type_info_t const* get_attribute_type(attribute_info_t const* attribute_info)
+    {
+        return attribute_info ? attribute_info->attribute_type : nullptr;
+    }
+
     void set_attribute_type(attribute_info_t* attribute_info, type_info_t const* attribute_type)
     {
         if(attribute_info)
         {
             attribute_info->attribute_type = attribute_type;
         }
+    }
+
+    type_info_t const* get_attribute_value(attribute_info_t const* attribute_info)
+    {
+        return attribute_info ? attribute_info->attribute_value : nullptr;
     }
 
     void set_attribute_value(attribute_info_t* attribute_info, type_info_t const* attribute_value)

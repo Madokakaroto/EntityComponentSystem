@@ -100,8 +100,8 @@ namespace punk
 
     // get attribute info
     attribute_info_t const* query_type_attribute_info(type_info_t const* type_info, type_info_t const* attribute_type_info);
-    attribute_info_t const* get_type_attribute_info(type_info_t* type_info, size_t field_index);
-    attribute_info_t* get_mutable_type_attribute_info(type_info_t* type_info, size_t field_index);
+    attribute_info_t const* get_type_attribute_info(type_info_t* type_info, size_t attribute_index);
+    attribute_info_t* get_mutable_type_attribute_info(type_info_t* type_info, size_t attribute_index);
 
     // set hash for fields
     void update_hash_for_fields(type_info_t* type_info);
@@ -126,6 +126,11 @@ namespace punk
 // interface for attribute
 namespace punk
 {
+    type_info_t const* get_attribute_type(attribute_info_t const* attribute_info);
+
     void set_attribute_type(attribute_info_t* attribute_info, type_info_t const* attribute_type);
+
+    type_info_t const* get_attribute_value(attribute_info_t const* attribute_info);
+
     void set_attribute_value(attribute_info_t* attribute_info, type_info_t const* attribute_value);
 }
