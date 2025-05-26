@@ -95,14 +95,10 @@ namespace punk
             return nullptr;
         }
 
-        assert(runtime_type_system_);
-        auto* entity_component_attribute = runtime_type_system_->get_or_create_type_info<PUNK_ATTRIBUTE_TYPE(component_tag)>();
-        assert(entity_component_attribute);
-
         if (std::any_of(component_type_infos, component_type_infos + count,
             [=](auto const* type_info)
             {
-                return query_type_attribute_info(type_info, entity_component_attribute) == nullptr;
+                return get_type_component_tag(type_info) == component_tag_t::none;
             }))
         {
             return nullptr;

@@ -31,7 +31,8 @@ namespace punk
 {
     PUNK_TRAITS_MEMBER_TYPE(element_type);
     PUNK_TRAITS_MEMBER_TYPE(value_type);
-    PUNK_TRAITS_MEMBER_TYPE(attributes);
+    PUNK_TRAITS_MEMBER_TYPE(component_tag);
+    PUNK_TRAITS_MEMBER_TYPE(component_group)
 
     template <typename T, typename S>
     constexpr auto owner_type_of_pmd(T S::*) noexcept -> T;

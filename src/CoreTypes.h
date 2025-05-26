@@ -18,12 +18,6 @@ namespace punk
     // data index in one chunk
     using chunk_index_t = handle<chunk_t, uint32_t>;
 
-    struct attribute_info_t
-    {
-        type_info_t const*          attribute_type;
-        type_info_t const*          attribute_value;
-    };
-
     struct field_info_t
     {
         type_info_t const*          type;
@@ -38,7 +32,8 @@ namespace punk
         type_hash_t                 hash;
         type_vtable_t               vtable;
         vector<field_info_t>        fields;
-        vector<attribute_info_t>    attributes;
+        component_tag_t             component_tag;
+        uint32_t                    component_group;
     };
 
     struct component_info_t

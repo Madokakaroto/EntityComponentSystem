@@ -13,6 +13,9 @@ namespace punk
     // generic traits implementation
     template <typename T>
     struct type_info_traits;
+
+    struct data_component_tag;
+    struct cow_component_tag;
 }
 
 // for primative types
@@ -64,7 +67,7 @@ namespace punk
 
         static uint32_t get_hash()
         {
-            auto const type_name = type::get_type_name();
+            auto const type_name = get_type_name();
             return hash_memory(type_name.c_str(), type_name.length());
         }
 
@@ -88,13 +91,28 @@ namespace punk
             return vtable;
         }
 
-        static constexpr uint32_t get_attribute_count() noexcept
+        static constexpr auto get_component_tag() noexcept
         {
-            return attribute_count<type>();
+            if constexpr(has_component_tag<type>)
+            {
+                using component_tag = traits_component_tag_t<type>;
+                if constexpr(std::is_same_v<component_tag, data_component_tag>)
+                {
+                    return component_tag_t::data;
+                }
+                else
+                {
+                    static_assert(std::is_same_v<component_tag, cow_component_tag>);
+                    return component_tag_t::copy_on_write;
+                }
+            }
+            else
+            {
+                return component_tag_t::none;
+            }
         }
 
-        template <size_t I>
-        static constexpr auto get_attribute() noexcept -> decltype(attribute_type<I, type>());
+        static auto get_component_group() -> std::conditional_t<has_component_group<type>, traits_component_group_t<type>, type>;
     };
 
     #define PUNK_IMPLEMENT_PRIMATIVE_TYPE(Type, TypeName)                   \

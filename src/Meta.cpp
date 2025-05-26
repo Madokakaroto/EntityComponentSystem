@@ -5,16 +5,17 @@
 namespace punk
 {
     // create type info
-    type_info_t* create_type_info(char const* type_name, uint32_t size, uint32_t alignment, type_vtable_t const& type_vtable, uint32_t field_count, uint32_t attribute_count)
+    type_info_t* create_type_info(type_create_info const& create_info)
     {
         auto type_info = std::make_unique<type_info_t>();
-        type_info->size = size;
-        type_info->alignment = alignment;
-        type_info->name = type_name;
-        type_info->hash.components.value1 = hash_memory(type_name, std::strlen(type_name));
-        type_info->vtable = type_vtable;
-        type_info->fields.resize(field_count);
-        type_info->attributes.resize(attribute_count);
+        type_info->size = create_info.size;
+        type_info->alignment = create_info.alignment;
+        type_info->name = create_info.type_name;
+        type_info->hash.components.value1 = hash_memory(create_info.type_name, std::strlen(create_info.type_name));
+        type_info->vtable = create_info.vtable;
+        type_info->fields.resize(create_info.field_count);
+        type_info->component_tag = create_info.component_tag;
+        type_info->component_group = create_info.component_group;
         return type_info.release();
     }
 
@@ -77,46 +78,14 @@ namespace punk
         return const_cast<field_info_t*>(get_type_field_info(type_info, field_index));
     }
 
-    uint32_t get_type_attribute_count(type_info_t const* type_info)
+    component_tag_t get_type_component_tag(type_info_t const* type_info)
     {
-        return type_info ? static_cast<uint32_t>(type_info->attributes.size()) : 0;
+        return type_info ? type_info->component_tag : component_tag_t::none;
     }
 
-    attribute_info_t const* query_type_attribute_info(type_info_t const* type_info, type_info_t const* attribute_type_info)
+    uint32_t get_type_component_group(type_info_t const* type_info)
     {
-        attribute_info_t const* result = nullptr;
-        if(type_info)
-        {
-            for(auto itr : type_info->attributes)
-            {
-                if(itr.attribute_type == attribute_type_info)
-                {
-                    result = &itr;
-                    break;
-                }
-            }
-        }
-        return result;
-    }
-
-    attribute_info_t const* get_type_attribute_info(type_info_t* type_info, size_t attribute_index)
-    {
-        if (!type_info)
-        {
-            return nullptr;
-        }
-
-        if (attribute_index >= type_info->attributes.size())
-        {
-            return nullptr;
-        }
-
-        return &type_info->attributes[attribute_index];
-    }
-
-    attribute_info_t* get_mutable_type_attribute_info(type_info_t* type_info, size_t attribute_index)
-    {
-        return const_cast<attribute_info_t*>(get_type_attribute_info(type_info, attribute_index));
+        return type_info ? type_info->component_group : 0;
     }
 
     void update_hash_for_fields(type_info_t* type_info)
@@ -160,34 +129,5 @@ namespace punk
     uint32_t get_field_offset(field_info_t* field_info)
     {
         return field_info ? field_info->offset : invalid_offset;
-    }
-}
-
-namespace punk
-{
-    type_info_t const* get_attribute_type(attribute_info_t const* attribute_info)
-    {
-        return attribute_info ? attribute_info->attribute_type : nullptr;
-    }
-
-    void set_attribute_type(attribute_info_t* attribute_info, type_info_t const* attribute_type)
-    {
-        if(attribute_info)
-        {
-            attribute_info->attribute_type = attribute_type;
-        }
-    }
-
-    type_info_t const* get_attribute_value(attribute_info_t const* attribute_info)
-    {
-        return attribute_info ? attribute_info->attribute_value : nullptr;
-    }
-
-    void set_attribute_value(attribute_info_t* attribute_info, type_info_t const* attribute_value)
-    {
-        if(attribute_info)
-        {
-            attribute_info->attribute_value = attribute_value;
-        }
     }
 }

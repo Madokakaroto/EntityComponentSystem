@@ -34,6 +34,13 @@ namespace punk
         void(*move_func)(void*, void*);
     };
 
+    enum class component_tag_t : uint8_t
+    {
+        none = 0x00,
+        data = 0x01,
+        copy_on_write = 0x02,
+    };
+
     // chunk is a list of chained memroy block, where the data is actually placed
     struct chunk_t;
 
@@ -45,9 +52,6 @@ namespace punk
 
     // runtime information about a member in a specific cpp type
     struct field_info_t;
-
-    // runtime information about an attribute in a specific cpp type
-    struct attribute_info_t;
 
     // runtime information about an entity component
     struct component_info_t;
@@ -64,14 +68,19 @@ namespace punk
 // interfaces for type_info_t
 namespace punk
 {
+    struct type_create_info
+    {
+        char const*     type_name;
+        uint32_t        size;
+        uint32_t        alignment;
+        type_vtable_t   vtable;
+        uint32_t        field_count;
+        component_tag_t component_tag;
+        uint32_t        component_group;
+    };
+
     // create type info
-    type_info_t* create_type_info(
-        char const* type_name,
-        uint32_t size,
-        uint32_t alignment,
-        type_vtable_t const& type_vtable,
-        uint32_t field_count,
-        uint32_t attribute_count);
+    type_info_t* create_type_info(type_create_info const& create_info);
 
     // delete type info
     void destroy_type_info(type_info_t* type_info) noexcept;
@@ -95,13 +104,11 @@ namespace punk
     field_info_t const* get_type_field_info(type_info_t const* type_info, size_t field_index);
     field_info_t* get_mutable_type_field_info(type_info_t* type_info, size_t field_index);
 
-    // get attribute count
-    uint32_t get_type_attribute_count(type_info_t const* type_info);
+    // g et component tag
+    component_tag_t get_type_component_tag(type_info_t const* type_info);
 
-    // get attribute info
-    attribute_info_t const* query_type_attribute_info(type_info_t const* type_info, type_info_t const* attribute_type_info);
-    attribute_info_t const* get_type_attribute_info(type_info_t* type_info, size_t attribute_index);
-    attribute_info_t* get_mutable_type_attribute_info(type_info_t* type_info, size_t attribute_index);
+    // get component group
+    uint32_t get_type_component_group(type_info_t const* type_info);
 
     // set hash for fields
     void update_hash_for_fields(type_info_t* type_info);
@@ -121,16 +128,4 @@ namespace punk
 
     // get the offset of the field
     uint32_t get_field_offset(field_info_t* field_info);
-}
-
-// interface for attribute
-namespace punk
-{
-    type_info_t const* get_attribute_type(attribute_info_t const* attribute_info);
-
-    void set_attribute_type(attribute_info_t* attribute_info, type_info_t const* attribute_type);
-
-    type_info_t const* get_attribute_value(attribute_info_t const* attribute_info);
-
-    void set_attribute_value(attribute_info_t* attribute_info, type_info_t const* attribute_value);
 }

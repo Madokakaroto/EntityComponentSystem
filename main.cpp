@@ -22,14 +22,13 @@ PUNK_REFLECT(bar, float_value);
 
 struct alignas(8) test_align
 {
+    using component_tag = punk::data_component_tag;
+
     int int_value;
     char char_value;
     double double_value;
     std::string str_value;
 };
-PUNK_ATTRIBUTE(test_align,
-    (component_tag, data_component_tag_t),
-    (component_group, default_component_group_t));
 
 async_simple::coro::Lazy<int> get_43() {
     std::cout << "run with ::operator new/delete" << '\n';
