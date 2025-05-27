@@ -5,8 +5,9 @@
 
 namespace punk
 {
-    constexpr uint32_t invalid_offset = (std::numeric_limits<uint32_t>::max)();
-    constexpr uint32_t invalid_size = (std::numeric_limits<uint32_t>::max)();;
+    constexpr uint32_t invalid_offset_value() { return (std::numeric_limits<uint32_t>::max)(); }
+    constexpr uint32_t invalid_size_value() { return (std::numeric_limits<uint32_t>::max)(); }
+    constexpr uint32_t invalid_index_value() { return (std::numeric_limits<uint32_t>::max)(); }
 
     union type_hash_t
     {

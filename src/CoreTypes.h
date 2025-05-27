@@ -2,9 +2,6 @@
 
 namespace punk
 {
-    constexpr uint32_t invalid_index_value() noexcept { return (std::numeric_limits<uint32_t>::max)(); }
-    constexpr uint32_t invalid_offset_value() noexcept { return invalid_index_value(); }
-
     struct chunk_t
     {
         static constexpr size_t chunke_size = 16 * 1024;
@@ -38,7 +35,10 @@ namespace punk
 
     struct component_info_t
     {
-        uint32_t                    hash;
+        type_info_t const*          type_info;
+        uint32_t                    index_in_archetype;
+        uint32_t                    index_in_group;
+        uint32_t                    group_index;
         uint32_t                    offset_in_chunk;
     };
 
@@ -46,8 +46,10 @@ namespace punk
     struct component_group_info_t
     {
         archetype_t*                owner_archetype;
+        uint32_t                    hash;
         uint32_t                    capacity_in_chunk;
-        vector<uint32_t>            component_index;
+        uint32_t                    index;
+        vector<uint32_t>            component_indices;      // indices of component in the owner archetype
     };
 
     using component_index_t = handle<component_info_t, uint16_t>;

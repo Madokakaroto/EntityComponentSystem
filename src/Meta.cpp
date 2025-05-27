@@ -128,6 +128,6 @@ namespace punk
 
     uint32_t get_field_offset(field_info_t* field_info)
     {
-        return field_info ? field_info->offset : invalid_offset;
+        return field_info ? field_info->offset : invalid_offset_value();
     }
 }

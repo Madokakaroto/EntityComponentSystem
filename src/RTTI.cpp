@@ -173,7 +173,8 @@ namespace punk
             // allocate a new 
             archetype = allocate_archetype(archetype_hash, count);
 
-            // TODO ... initialize archetype info
+            // initialize archetype info
+            initialize_archetype(archetype.get(), component_type_infos, count);
 
             // register archetype, two phrase commit
             archetype = register_archetype(archetype);
@@ -189,7 +190,8 @@ namespace punk
             };
             archetype->hash = 0;
             archetype->registered = false;
-            archetype->components.resize(component_count);
+            archetype->components.reserve(component_count);
+            archetype->component_groups.reserve(component_count);
             return archetype;
         }
 
@@ -229,6 +231,76 @@ namespace punk
             {
                 all_archetypes.erase(itr);
             }
+        }
+
+        void initialize_archetype(archetype_t* archetype, type_info_t const** component_type_infos, size_t count)
+        {
+            /// initialize components info
+            auto all_components_info = std::ranges::subrange
+            {
+                component_type_infos,
+                component_type_infos + count
+            };
+            std::ranges::copy(all_components_info | std::views::transform(
+                [index{ 0u }](auto const* comp_type_info) mutable
+                {
+                    return component_info_t
+                    {
+                        .type_info = comp_type_info,
+                        .index_in_archetype = index++,
+                        .index_in_group = invalid_index_value(),
+                        .group_index = invalid_index_value(),
+                        .offset_in_chunk = 0,
+                    };
+                }), std::back_inserter(archetype->components));
+
+            /// initialize component groups info
+            // map to array of component_group_info_t
+            std::ranges::transform(archetype->components, std::back_inserter(archetype->component_groups),
+                [archetype](auto const& component_info)
+                {
+                    component_group_info_t component_group
+                    {
+                        .owner_archetype = archetype,
+                        .hash = component_info.type_info->component_group,
+                        .capacity_in_chunk = 0,
+                        .component_indices = { component_info.index_in_archetype },
+                    };
+                    return component_group;
+                });
+            // sort component group by has value 
+            std::ranges::sort(archetype->component_groups,
+                [](auto const& lhs, auto const& rhs)
+                {
+                    return lhs.hash < rhs.hash;
+                });
+            // unique all the duplicated components, and merge the component indices
+            auto [erase_begin, erase_last] = std::ranges::unique(archetype->component_groups,
+                [](component_group_info_t& lhs, component_group_info_t& rhs)
+                {
+                    if(lhs.hash == rhs.hash)
+                    {
+                        lhs.component_indices.insert_range(lhs.component_indices.end(), rhs.component_indices);
+                        return true;
+                    }
+                    return false;
+                });
+            archetype->component_groups.erase(erase_begin, erase_last);
+            // update the component group index for all component
+            std::ranges::for_each(archetype->component_groups,
+                [index{ 0u }, archetype](auto& component_group) mutable
+                {
+                    component_group.index = index++;
+                    std::ranges::for_each(component_group.component_indices,
+                        [index{ 0u }, group_index = component_group.index, archetype](uint32_t component_index) mutable
+                        {
+                            auto& component_info = archetype->components[component_index];
+                            component_info.group_index = group_index;
+                            component_info.group_index = index++;
+                        });
+                });
+
+            // TODO ... initialize memory capacity_in_chunk for component_group & offset_in_chunk for component
         }
     };
 

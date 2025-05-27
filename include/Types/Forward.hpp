@@ -18,6 +18,7 @@
 #include <string_view>
 #include <format>
 #include <memory_resource>
+#include <ranges>
 
 namespace punk
 {
