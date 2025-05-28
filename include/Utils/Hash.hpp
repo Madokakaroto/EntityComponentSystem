@@ -102,4 +102,29 @@ namespace punk
         constexpr uint32_t ecs_seed = 0x78656373;
         return murmur_hash_x86_32(arr, static_cast<int>(len), ecs_seed);
     }
+
+    // TODO ... move to a better header
+    template <typename T> requires(std::is_integral_v<T>)
+    constexpr T align_up_with_mask(T value, T mask)
+    {
+        return (value + mask) & ~mask;
+    }
+
+    template <typename T> requires(std::is_integral_v<T>)
+    constexpr T align_down_with_mask(T value, T mask)
+    {
+        return value & ~mask;
+    }
+
+    template <typename T> requires(std::is_integral_v<T>)
+    constexpr T align_up(T value, T alignment)
+    {
+        return align_up_with_mask(value, std::bit_ceil(alignment));
+    }
+
+    template <typename T> requires(std::is_integral_v<T>)
+    constexpr T align_down(T value, T alignment)
+    {
+        return align_down_with_mask(value, std::bit_ceil(alignment));
+    }
 }

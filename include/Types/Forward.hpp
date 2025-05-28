@@ -19,6 +19,8 @@
 #include <format>
 #include <memory_resource>
 #include <ranges>
+#include <bit>
+#include <numeric>
 
 namespace punk
 {

@@ -269,7 +269,7 @@ namespace punk
                     return component_group;
                 });
             // sort component group by has value 
-            std::ranges::sort(archetype->component_groups,
+            std::ranges::stable_sort(archetype->component_groups,
                 [](auto const& lhs, auto const& rhs)
                 {
                     return lhs.hash < rhs.hash;
@@ -300,7 +300,73 @@ namespace punk
                         });
                 });
 
-            // TODO ... initialize memory capacity_in_chunk for component_group & offset_in_chunk for component
+            // initialize memory capacity_in_chunk for component_group & offset_in_chunk for component
+            search_chunck_offset_and_capacity(archetype);
+        }
+
+        void search_chunck_offset_and_capacity(archetype_t* archetype)
+        {
+            assert(archetype);
+
+            for(auto& component_group : archetype->component_groups)
+            {
+                /// Search the capcity in chunk for each component group
+                // 1. accumulate all the component size
+                auto const all_comp_size = std::reduce(
+                    component_group.component_indices.begin(),
+                    component_group.component_indices.end(),
+                    0u, [archetype](uint32_t acc, uint32_t compoent_index)
+                    {
+                        assert(compoent_index < archetype->components.size());
+                        auto const& component_info = archetype->components[compoent_index];
+                        return acc + component_info.type_info->size;
+                    });
+
+                // 2. We search the capacity with a initialize value of (data_block_size / all_comp_size + 1)
+                constexpr uint32_t data_block_size = chunk_t::chunke_size - sizeof(chunk_t);
+                uint32_t capacity = data_block_size / all_comp_size + 1;
+
+                // 3. search the best capacity, by considering the alignments
+                uint32_t chunk_size;
+                std::vector<uint32_t> offsets(component_group.component_indices.size(), 0u);
+                do
+                {
+                    capacity--;
+                    chunk_size = calculate_chunk_size_and_offsets(archetype, component_group, capacity, offsets);
+                } while (data_block_size <= chunk_size);
+
+                // 4. now we have got the capacity result and offsets of all components, update into the archetype/component info
+                component_group.capacity_in_chunk = capacity;
+                for(uint32_t loop = 0; loop < offsets.size(); ++loop)
+                {
+                    archetype->components[loop].offset_in_chunk = offsets[loop];
+                }
+            }
+        }
+
+        uint32_t calculate_chunk_size_and_offsets(archetype_t* archetype, component_group_info_t const& component_group, uint32_t capacity, std::vector<uint32_t>& offsets)
+        {
+            assert(archetype);
+            uint32_t size = sizeof(chunk_t);
+
+            offsets.clear();
+            std::ranges::transform(component_group.component_indices, std::back_inserter(offsets),
+                [archetype, &size, capacity](auto const& component_index)
+                {
+                    auto const& component_info = archetype->components[component_index];
+                    auto const* component_type_info = component_info.type_info;
+
+                    // adjust alignment for each component
+                    auto const offset = align_up(size, component_type_info->alignment);
+
+                    // accumulate chunk memory size
+                    size += component_type_info->size * capacity;
+
+                    // return the offset
+                    return offset;
+                });
+
+            return size;
         }
     };
 
