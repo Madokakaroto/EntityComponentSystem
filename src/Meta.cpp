@@ -52,6 +52,11 @@ namespace punk
        return type_info ? type_info->hash : type_hash_t{ uint64_t{0} };
     }
 
+    uint32_t get_type_name_hash(type_info_t const* type_info)
+    {
+        return get_type_hash(type_info).components.value1;
+    }
+
     // get field count
     uint32_t get_type_field_count(type_info_t const* type_info)
     {

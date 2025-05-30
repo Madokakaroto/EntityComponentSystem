@@ -115,7 +115,7 @@ namespace punk
         std::ranges::stable_sort(all_comps,
             [](auto const* lhs, auto const* rhs)
             {
-                return get_type_hash(lhs) < get_type_hash(rhs);
+                return get_type_name_hash(lhs) < get_type_name_hash(rhs);
             });
 
         // forward to implementation
@@ -154,17 +154,21 @@ namespace punk
         {
             auto const current_archetype_component_count = archetype->component_types.size();
             auto const new_archetype_components_count = current_archetype_component_count + count;
-            auto* components_info_ptr = static_cast<type_info_t const**>(alloca(sizeof(type_info_t const*) * new_archetype_components_count));
-            std::ranges::subrange merge_comp_type_infos{ components_info_ptr, components_info_ptr + new_archetype_components_count };
+            auto* component_infos_ptr = PUNK_ALLOCA(type_info_t const*, new_archetype_components_count);
+            std::ranges::subrange merge_comp_type_infos
+            {
+                component_infos_ptr,
+                component_infos_ptr + new_archetype_components_count
+            };
 
             // TODO ... return orders
-            auto* orders_ptr = static_cast<size_t*>(alloca(sizeof(size_t) * count));
+            auto* orders_ptr = PUNK_ALLOCA(size_t, count);
             std::ranges::subrange orders{ orders_ptr, orders_ptr + count };
             std::ranges::generate(orders, [index{ 0u }]() mutable { return index++; });
             std::ranges::stable_sort(orders,
                 [=](auto const l_index, auto const r_index)
                 {
-                    return get_type_hash(component_type_infos[l_index]) < get_type_hash(component_type_infos[r_index]);
+                    return get_type_name_hash(component_type_infos[l_index]) < get_type_name_hash(component_type_infos[r_index]);
                 });
 
             size_t i = 0, j = 0, index = 0;
@@ -174,7 +178,7 @@ namespace punk
                 auto const current_index = orders[j];
                 auto const* current_append_type = component_type_infos[current_index];
 
-                if(get_type_hash(current_component_type) < get_type_hash(current_append_type))
+                if(get_type_name_hash(current_component_type) < get_type_name_hash(current_append_type))
                 {
                     merge_comp_type_infos[index++] = current_component_type;
                     ++i;
@@ -218,7 +222,7 @@ namespace punk
                 difference_type_infos.begin(),
                 [](type_info_t const* lhs, type_info_t const* rhs)
                 {
-                    return get_type_hash(lhs) < get_type_hash(rhs);
+                    return get_type_name_hash(lhs) < get_type_name_hash(rhs);
                 });
 
             return get_or_create_archetype_impl(diff_comp_begin, std::ranges::distance(diff_comp_end, diff_comp_begin));
@@ -228,15 +232,15 @@ namespace punk
         virtual archetype_ptr get_or_create_archetype_impl(type_info_t const** component_type_infos, size_t count) override
         {
             // calculate the sorted components hash, as the archetype hash value
-            std::vector<type_hash_t> hash{};
+            std::vector<uint32_t> hash{};
             hash.reserve(count);
             std::ranges::subrange all_comps{ component_type_infos, component_type_infos + count };
             std::ranges::transform(all_comps, std::back_inserter(hash),
                 [](auto const* type_info)
                 {
-                    return get_type_hash(type_info);
+                    return get_type_name_hash(type_info);
                 });
-            auto const archetype_hash = hash_memory(reinterpret_cast<char const*>(hash.data()), sizeof(type_hash_t) * hash.size());
+            auto const archetype_hash = hash_memory(reinterpret_cast<char const*>(hash.data()), sizeof(uint32_t) * hash.size());
 
             // if found one, return
             auto archetype = get_archetype(archetype_hash);

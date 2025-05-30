@@ -97,6 +97,7 @@ namespace punk
 
     // get type hash
     type_hash_t get_type_hash(type_info_t const* type_info);
+    uint32_t get_type_name_hash(type_info_t const* type_info);
 
     // get field count
     uint32_t get_type_field_count(type_info_t const* type_info);
