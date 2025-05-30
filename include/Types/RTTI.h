@@ -207,12 +207,13 @@ namespace punk
 
     public:
         virtual archetype_ptr get_archetype(uint32_t hash) = 0;
-        virtual archetype_ptr archetype_include_components(archetype_ptr const& archetype, type_info_t const** component_type_infos, size_t count) = 0;
-        virtual archetype_ptr archetype_exclude_components(archetype_ptr const& archetype, type_info_t const** component_type_infos, size_t count) = 0;
 
-        // runtime version of interface get_or_create_archetype
-        archetype_ptr get_or_create_archetype(type_info_t const** component_type_infos, size_t count);
-        // generic version of interface get_or_create_archetype
+        // runtime version of interfaces
+        archetype_ptr get_or_create_archetype(type_info_t const** component_types, size_t component_count);
+        archetype_ptr archetype_include_components(archetype_ptr const& archetype, size_t component_count, type_info_t const** component_types, size_t* include_orders = nullptr);
+        archetype_ptr archetype_exclude_components(archetype_ptr const& archetype, type_info_t const** component_types, size_t component_count);
+
+        // generic version of interfaces
         template <typename ... Args> requires atleast_one_component_types<Args...>
         archetype_ptr get_or_create_archetype()
         {
@@ -231,8 +232,45 @@ namespace punk
             return get_or_create_archetype_impl(type_infos.data(), count);
         }
 
+        template <typename ... Args> requires atleast_one_component_types<Args...>
+        auto archetype_include_components(archetype_ptr const& archetype) -> std::pair<archetype_ptr, std::array<size_t, sizeof...(Args)>>
+        {
+            assert(runtime_type_system_);
+            constexpr size_t component_count = sizeof...(Args);
+
+            // prepare component types
+            std::array<type_info_t const*, component_count> component_types
+            {
+                (runtime_type_system_->get_or_create_type_info<Args>(), ...)
+            };
+
+            // prepare order
+            std::array<size_t, component_count> orders{};
+
+            // forward to runtime interface
+            auto result_archetype = archetype_include_components(archetype, component_count, component_types.data(), orders.data());
+
+            // return { result_archetype, orders } pair
+            return { result_archetype, orders };
+        }
+
+        template <typename ... Args> requires atleast_one_component_types<Args...>
+        archetype_ptr archetype_exclude_components(archetype_ptr const& archetype)
+        {
+            assert(runtime_type_system_);
+            constexpr size_t component_count = sizeof...(Args);
+            std::array<type_info_t const*, component_count> component_types
+            {
+                (runtime_type_system_->get_or_create_type_info<Args>(), ...)
+            };
+            return archetype_exclude_components(archetype, component_types.data(), component_count);
+        }
+
     protected:
-        virtual archetype_ptr get_or_create_archetype_impl(type_info_t const** sorted_component_type_infos, size_t count) = 0;
+        virtual archetype_ptr get_or_create_archetype_impl(type_info_t const** sorted_component_types, size_t component_count) = 0;
+        virtual archetype_ptr archetype_include_components_impl(archetype_ptr const& archetype, 
+            size_t component_count, type_info_t const** component_types, size_t* include_orders) = 0;
+        virtual archetype_ptr archetype_exclude_components_impl(archetype_ptr const& archetype, type_info_t const** component_types, size_t component_count) = 0;
 
     protected:
         runtime_type_system* runtime_type_system_;

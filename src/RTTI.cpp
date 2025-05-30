@@ -92,14 +92,14 @@ namespace punk
 
 namespace punk
 {
-    archetype_ptr runtime_archetype_system::get_or_create_archetype(type_info_t const** component_type_infos, size_t count)
+    archetype_ptr runtime_archetype_system::get_or_create_archetype(type_info_t const** component_types, size_t component_count)
     {
-        if (count == 0)
+        if (component_count == 0)
         {
             return nullptr;
         }
 
-        std::ranges::subrange all_comps{ component_type_infos, component_type_infos + count };
+        std::ranges::subrange all_comps{ component_types, component_types + component_count };
 
         // failed to create archetype when any of the components has no component tag
         if (std::ranges::any_of(all_comps,
@@ -119,9 +119,50 @@ namespace punk
             });
 
         // forward to implementation
-        return get_or_create_archetype_impl(component_type_infos, count);
+        return get_or_create_archetype_impl(component_types, component_count);
     }
 
+    archetype_ptr runtime_archetype_system::archetype_include_components(archetype_ptr const& archetype,
+        size_t component_count, type_info_t const** component_types, size_t* include_orders)
+    {
+        if(!component_types || component_count == 0)
+        {
+            return archetype;
+        }
+        include_orders = include_orders ? include_orders : PUNK_ALLOCA(size_t, component_count);
+
+        std::ranges::subrange orders{ include_orders, include_orders + component_count };
+        // generate an index sequence for orders as the initial value
+        std::ranges::generate(orders, [index{ 0u }]() mutable { return index++; });
+        // sort the index, just like the indirect array of component_types
+        std::ranges::stable_sort(orders,
+            [component_types](auto const lhs, auto const rhs)
+            {
+                return get_type_name_hash(component_types[lhs]) < get_type_name_hash(component_types[rhs]);
+            });
+
+        return archetype_include_components_impl(archetype, component_count, component_types, include_orders);
+    }
+
+    archetype_ptr runtime_archetype_system::archetype_exclude_components(archetype_ptr const& archetype, type_info_t const** component_types, size_t component_count)
+    {
+        if(!component_types || component_count == 0)
+        {
+            return archetype;
+        }
+
+        std::ranges::stable_sort(component_types, component_types + component_count,
+            [](auto const* lhs, auto const* rhs)
+            {
+                return get_type_name_hash(lhs) < get_type_name_hash(rhs);
+            });
+
+        return archetype_exclude_components(archetype, component_types, component_count);
+    }
+}
+
+namespace punk
+{
     class runtime_archetype_system_impl final : public runtime_archetype_system
     {
     public:
@@ -150,10 +191,43 @@ namespace punk
             return nullptr;
         }
 
-        virtual archetype_ptr archetype_include_components(archetype_ptr const& archetype, type_info_t const** component_type_infos, size_t count) override
+    protected:
+        virtual archetype_ptr get_or_create_archetype_impl(type_info_t const** sorted_component_types, size_t component_count) override
+        {
+            // calculate the sorted components hash, as the archetype hash value
+            auto* hash_ptr = PUNK_ALLOCA(uint32_t, component_count);
+            std::ranges::subrange all_hash{ hash_ptr, hash_ptr + component_count };
+            std::ranges::subrange all_comps{ sorted_component_types, sorted_component_types + component_count };
+            std::ranges::transform(all_comps, all_hash.begin(),
+                [](auto const* type_info)
+                {
+                    return get_type_name_hash(type_info);
+                });
+            auto const archetype_hash = hash_memory(reinterpret_cast<char const*>(all_hash.data()), sizeof(uint32_t) * all_hash.size());
+
+            // if found one, return
+            auto archetype = get_archetype(archetype_hash);
+            if(archetype)
+            {
+                return archetype;
+            }
+
+            // allocate a new 
+            archetype = allocate_archetype(archetype_hash, component_count);
+
+            // initialize archetype info
+            initialize_archetype(archetype.get(), sorted_component_types, component_count);
+
+            // register archetype, two phrase commit
+            archetype = register_archetype(archetype);
+            return archetype;
+        }
+
+        virtual archetype_ptr archetype_include_components_impl(archetype_ptr const& archetype, 
+            size_t component_count, type_info_t const** component_types, size_t* include_orders) override
         {
             auto const current_archetype_component_count = archetype->component_types.size();
-            auto const new_archetype_components_count = current_archetype_component_count + count;
+            auto const new_archetype_components_count = current_archetype_component_count + component_count;
             auto* component_infos_ptr = PUNK_ALLOCA(type_info_t const*, new_archetype_components_count);
             std::ranges::subrange merge_comp_type_infos
             {
@@ -162,21 +236,21 @@ namespace punk
             };
 
             // TODO ... return orders
-            auto* orders_ptr = PUNK_ALLOCA(size_t, count);
-            std::ranges::subrange orders{ orders_ptr, orders_ptr + count };
+            auto* orders_ptr = PUNK_ALLOCA(size_t, component_count);
+            std::ranges::subrange orders{ orders_ptr, orders_ptr + component_count };
             std::ranges::generate(orders, [index{ 0u }]() mutable { return index++; });
             std::ranges::stable_sort(orders,
                 [=](auto const l_index, auto const r_index)
                 {
-                    return get_type_name_hash(component_type_infos[l_index]) < get_type_name_hash(component_type_infos[r_index]);
+                    return get_type_name_hash(component_types[l_index]) < get_type_name_hash(component_types[r_index]);
                 });
 
             size_t i = 0, j = 0, index = 0;
-            while(i < current_archetype_component_count && j < count)
+            while(i < current_archetype_component_count && j < component_count)
             {
                 auto const* current_component_type = archetype->component_types[i];
                 auto const current_index = orders[j];
-                auto const* current_append_type = component_type_infos[current_index];
+                auto const* current_append_type = component_types[current_index];
 
                 if(get_type_name_hash(current_component_type) < get_type_name_hash(current_append_type))
                 {
@@ -197,10 +271,10 @@ namespace punk
                 merge_comp_type_infos[index++] = current_component_type;
                 ++i;
             }
-            while(j < count)
+            while(j < component_count)
             {
                 auto const current_index = orders[j];
-                auto const* current_append_type = component_type_infos[current_index];
+                auto const* current_append_type = component_types[current_index];
                 orders[current_index] = index++;
                 merge_comp_type_infos[index] = current_append_type;
                 ++j;
@@ -209,12 +283,12 @@ namespace punk
             return get_or_create_archetype_impl(merge_comp_type_infos.data(), merge_comp_type_infos.size());
         }
 
-        virtual archetype_ptr archetype_exclude_components(archetype_ptr const& archetype, type_info_t const** component_type_infos, size_t count) override
+        virtual archetype_ptr archetype_exclude_components_impl(archetype_ptr const& archetype,type_info_t const** component_types, size_t component_count) override
         {
             auto const components_count = archetype->component_types.size();
             auto* diff_comp_begin = PUNK_ALLOCA(type_info_t const*, components_count);
             std::ranges::subrange difference_type_infos{ diff_comp_begin, diff_comp_begin + components_count };
-            std::ranges::subrange subtract_type_infos{ component_type_infos,component_type_infos + count };
+            std::ranges::subrange subtract_type_infos{ component_types, component_types + component_count };
 
             auto [_, diff_comp_end] = std::ranges::set_difference(
                 archetype->component_types,
@@ -226,38 +300,6 @@ namespace punk
                 });
 
             return get_or_create_archetype_impl(diff_comp_begin, std::ranges::distance(diff_comp_end, diff_comp_begin));
-        }
-
-    protected:
-        virtual archetype_ptr get_or_create_archetype_impl(type_info_t const** component_type_infos, size_t count) override
-        {
-            // calculate the sorted components hash, as the archetype hash value
-            std::vector<uint32_t> hash{};
-            hash.reserve(count);
-            std::ranges::subrange all_comps{ component_type_infos, component_type_infos + count };
-            std::ranges::transform(all_comps, std::back_inserter(hash),
-                [](auto const* type_info)
-                {
-                    return get_type_name_hash(type_info);
-                });
-            auto const archetype_hash = hash_memory(reinterpret_cast<char const*>(hash.data()), sizeof(uint32_t) * hash.size());
-
-            // if found one, return
-            auto archetype = get_archetype(archetype_hash);
-            if(archetype)
-            {
-                return archetype;
-            }
-
-            // allocate a new 
-            archetype = allocate_archetype(archetype_hash, count);
-
-            // initialize archetype info
-            initialize_archetype(archetype.get(), component_type_infos, count);
-
-            // register archetype, two phrase commit
-            archetype = register_archetype(archetype);
-            return archetype;
         }
 
     private:
