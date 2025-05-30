@@ -3,6 +3,10 @@
 #include "CoreTypes.h"
 #include "Utils/Hash.hpp"
 
+#ifndef PUNK_ALLOCA
+#define PUNK_ALLOCA(type, count) static_cast<std::add_pointer_t<type>>(alloca(sizeof(type) * (count)))
+#endif
+
 namespace punk
 {
     class runtime_type_system_impl final : public runtime_type_system
@@ -148,7 +152,7 @@ namespace punk
 
         virtual archetype_ptr archetype_include_components(archetype_ptr const& archetype, type_info_t const** component_type_infos, size_t count) override
         {
-            auto const current_archetype_component_count = archetype->components.size();
+            auto const current_archetype_component_count = archetype->component_types.size();
             auto const new_archetype_components_count = current_archetype_component_count + count;
             auto* components_info_ptr = static_cast<type_info_t const**>(alloca(sizeof(type_info_t const*) * new_archetype_components_count));
             std::ranges::subrange merge_comp_type_infos{ components_info_ptr, components_info_ptr + new_archetype_components_count };
@@ -166,13 +170,13 @@ namespace punk
             size_t i = 0, j = 0, index = 0;
             while(i < current_archetype_component_count && j < count)
             {
-                auto const& current_component_info = archetype->components[i];
+                auto const* current_component_type = archetype->component_types[i];
                 auto const current_index = orders[j];
                 auto const* current_append_type = component_type_infos[current_index];
 
-                if(get_type_hash(current_component_info.type_info) < get_type_hash(current_append_type))
+                if(get_type_hash(current_component_type) < get_type_hash(current_append_type))
                 {
-                    merge_comp_type_infos[index++] = current_component_info.type_info;
+                    merge_comp_type_infos[index++] = current_component_type;
                     ++i;
                 }
                 else
@@ -185,8 +189,8 @@ namespace punk
 
             while(i < current_archetype_component_count)
             {
-                auto const& current_component_info = archetype->components[j];
-                merge_comp_type_infos[index++] = current_component_info.type_info;
+                auto const* current_component_type = archetype->component_types[j];
+                merge_comp_type_infos[index++] = current_component_type;
                 ++i;
             }
             while(j < count)
@@ -203,19 +207,13 @@ namespace punk
 
         virtual archetype_ptr archetype_exclude_components(archetype_ptr const& archetype, type_info_t const** component_type_infos, size_t count) override
         {
-            auto const components_count = archetype->components.size();
-            auto* component_type_info_ptr = static_cast<type_info_t const**>(alloca(sizeof(type_info_t const*) * components_count));
-
-            std::ranges::subrange component_infos{ component_type_info_ptr, component_type_info_ptr + count };
-            std::ranges::transform(archetype->components, component_infos.begin(),
-                [](component_info_t const& component_info) { return component_info.type_info; });
-
-            auto* diff_comp_type_info_ptr = static_cast<type_info_t const**>(alloca(sizeof(type_info_t const*) * components_count));
-            std::ranges::subrange difference_type_infos{ diff_comp_type_info_ptr, diff_comp_type_info_ptr + components_count };
+            auto const components_count = archetype->component_types.size();
+            auto* diff_comp_begin = PUNK_ALLOCA(type_info_t const*, components_count);
+            std::ranges::subrange difference_type_infos{ diff_comp_begin, diff_comp_begin + components_count };
             std::ranges::subrange subtract_type_infos{ component_type_infos,component_type_infos + count };
 
-            auto [begin, end] = std::ranges::set_difference(
-                component_infos,
+            auto [_, diff_comp_end] = std::ranges::set_difference(
+                archetype->component_types,
                 subtract_type_infos,
                 difference_type_infos.begin(),
                 [](type_info_t const* lhs, type_info_t const* rhs)
@@ -223,7 +221,7 @@ namespace punk
                     return get_type_hash(lhs) < get_type_hash(rhs);
                 });
 
-            return get_or_create_archetype_impl(begin, std::ranges::distance(end, begin));
+            return get_or_create_archetype_impl(diff_comp_begin, std::ranges::distance(diff_comp_end, diff_comp_begin));
         }
 
     protected:
@@ -267,7 +265,8 @@ namespace punk
             };
             archetype->hash = 0;
             archetype->registered = false;
-            archetype->components.reserve(component_count);
+            archetype->component_types.reserve(component_count);
+            archetype->component_infos.reserve(component_count);
             archetype->component_groups.reserve(component_count);
             return archetype;
         }
@@ -310,38 +309,36 @@ namespace punk
             }
         }
 
-        void initialize_archetype(archetype_t* archetype, type_info_t const** component_type_infos, size_t count)
+        void initialize_archetype(archetype_t* archetype, type_info_t const** component_types, size_t count)
         {
-            /// initialize components info
-            auto all_components_info = std::ranges::subrange
-            {
-                component_type_infos,
-                component_type_infos + count
-            };
-            std::ranges::copy(all_components_info | std::views::transform(
-                [index{ 0u }](auto const* comp_type_info) mutable
+            /// initialize component types
+            assert(archetype->component_types.capacity() == count);
+            std::ranges::copy(component_types, component_types + count, std::back_inserter(archetype->component_types));
+
+            /// initialize component infos
+            std::ranges::transform(archetype->component_types, std::back_inserter(archetype->component_infos),
+                [index{ 0u }](auto const*) mutable
                 {
                     return component_info_t
                     {
-                        .type_info = comp_type_info,
                         .index_in_archetype = index++,
                         .index_in_group = invalid_index_value(),
-                        .group_index = invalid_index_value(),
+                        .index_of_group = invalid_index_value(),
                         .offset_in_chunk = 0,
                     };
-                }), std::back_inserter(archetype->components));
+                });
 
             /// initialize component groups info
             // map to array of component_group_info_t
-            std::ranges::transform(archetype->components, std::back_inserter(archetype->component_groups),
+            std::ranges::transform(archetype->component_infos, std::back_inserter(archetype->component_groups),
                 [archetype](auto const& component_info)
                 {
+                    auto const index = component_info.index_in_archetype;
                     component_group_info_t component_group
                     {
-                        .owner_archetype = archetype,
-                        .hash = component_info.type_info->component_group,
+                        .hash = archetype->component_types[index]->hash.components.value1,
                         .capacity_in_chunk = 0,
-                        .component_indices = { component_info.index_in_archetype },
+                        .component_indices = { index },
                     };
                     return component_group;
                 });
@@ -367,13 +364,13 @@ namespace punk
             std::ranges::for_each(archetype->component_groups,
                 [index{ 0u }, archetype](auto& component_group) mutable
                 {
-                    component_group.index = index++;
+                    component_group.index_in_archetype = index++;
                     std::ranges::for_each(component_group.component_indices,
-                        [index{ 0u }, group_index = component_group.index, archetype](uint32_t component_index) mutable
+                        [index{ 0u }, group_index = component_group.index_in_archetype, archetype](uint32_t component_index) mutable
                         {
-                            auto& component_info = archetype->components[component_index];
-                            component_info.group_index = group_index;
-                            component_info.group_index = index++;
+                            auto& component_info = archetype->component_infos[component_index];
+                            component_info.index_of_group = group_index;
+                            component_info.index_in_group = index++;
                         });
                 });
 
@@ -392,11 +389,11 @@ namespace punk
                 auto const all_comp_size = std::reduce(
                     component_group.component_indices.begin(),
                     component_group.component_indices.end(),
-                    0u, [archetype](uint32_t acc, uint32_t compoent_index)
+                    0u, [archetype](uint32_t acc, uint32_t component_index)
                     {
-                        assert(compoent_index < archetype->components.size());
-                        auto const& component_info = archetype->components[compoent_index];
-                        return acc + component_info.type_info->size;
+                        assert(component_index < archetype->component_types.size());
+                        auto const* component_type = archetype->component_types[component_index];
+                        return acc + component_type->size;
                     });
 
                 // 2. We search the capacity with a initialize value of (data_block_size / all_comp_size + 1)
@@ -416,7 +413,7 @@ namespace punk
                 component_group.capacity_in_chunk = capacity;
                 for(uint32_t loop = 0; loop < offsets.size(); ++loop)
                 {
-                    archetype->components[loop].offset_in_chunk = offsets[loop];
+                    archetype->component_infos[loop].offset_in_chunk = offsets[loop];
                 }
             }
         }
@@ -430,14 +427,13 @@ namespace punk
             std::ranges::transform(component_group.component_indices, std::back_inserter(offsets),
                 [archetype, &size, capacity](auto const& component_index)
                 {
-                    auto const& component_info = archetype->components[component_index];
-                    auto const* component_type_info = component_info.type_info;
+                    auto const* component_type = archetype->component_types[component_index];
 
                     // adjust alignment for each component
-                    auto const offset = align_up(size, component_type_info->alignment);
+                    auto const offset = align_up(size, component_type->alignment);
 
                     // accumulate chunk memory size
-                    size += component_type_info->size * capacity;
+                    size += component_type->size * capacity;
 
                     // return the offset
                     return offset;

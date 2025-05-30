@@ -27,37 +27,37 @@ namespace punk
         type_hash_t                 hash;
         type_vtable_t               vtable;
         vector<field_info_t>        fields;
+
+        // TODO ... using C++ attributes to manager these two
         component_tag_t             component_tag;
         uint32_t                    component_group;
     };
 
     struct component_info_t
     {
-        type_info_t const*          type_info;
         uint32_t                    index_in_archetype;
         uint32_t                    index_in_group;
-        uint32_t                    group_index;
+        uint32_t                    index_of_group;
         uint32_t                    offset_in_chunk;
     };
 
-    struct archetype_t;
     struct component_group_info_t
     {
-        archetype_t*                owner_archetype;
         uint32_t                    hash;
         uint32_t                    capacity_in_chunk;
-        uint32_t                    index;
+        uint32_t                    index_in_archetype;
         vector<uint32_t>            component_indices;      // indices of component in the owner archetype
     };
 
-    using component_index_t = handle<component_info_t, uint16_t>;
-
-    using archetype_delete_delegate_t = std::function<void(archetype_t*)>;
     struct archetype_t
     {
         uint32_t                        hash;
         bool                            registered;
-        vector<component_info_t>        components;
+        vector<type_info_t const*>      component_types;
+        vector<component_info_t>        component_infos;
         vector<component_group_info_t>  component_groups;
     };
+
+    using archetype_delete_delegate_t = std::function<void(archetype_t*)>;
+    using component_index_t = handle<component_info_t, uint16_t>;
 }
