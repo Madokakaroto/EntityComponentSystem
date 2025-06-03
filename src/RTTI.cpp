@@ -279,6 +279,7 @@ namespace punk
                 else //(current_hash == append_hash)
                 {
                     orders[current_index] = invalid_index_value();
+                    ++j;
                 }
             }
 
