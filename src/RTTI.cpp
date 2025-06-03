@@ -118,18 +118,28 @@ namespace punk
                 return get_type_name_hash(lhs) < get_type_name_hash(rhs);
             });
 
+        // remove unique components
+        auto [end, _] = std::ranges::unique(all_comps,
+            [](auto const* lhs, auto const* rhs)
+            {
+                return get_type_name_hash(lhs) == get_type_name_hash(rhs);
+            });
+
+        // adapt the component count
+        component_count = std::ranges::distance(all_comps.begin(), end);
+
         // forward to implementation
         return get_or_create_archetype_impl(component_types, component_count);
     }
 
     archetype_ptr runtime_archetype_system::archetype_include_components(archetype_ptr const& archetype,
-        size_t component_count, type_info_t const** component_types, size_t* include_orders)
+        size_t component_count, type_info_t const** component_types, uint32_t* include_orders)
     {
         if(!component_types || component_count == 0)
         {
             return archetype;
         }
-        include_orders = include_orders ? include_orders : PUNK_ALLOCA(size_t, component_count);
+        include_orders = include_orders ? include_orders : PUNK_ALLOCA(uint32_t, component_count);
 
         std::ranges::subrange orders{ include_orders, include_orders + component_count };
         // generate an index sequence for orders as the initial value
@@ -140,7 +150,16 @@ namespace punk
             {
                 return get_type_name_hash(component_types[lhs]) < get_type_name_hash(component_types[rhs]);
             });
+        // remove duplicate components
+        auto [invalid_begin, invalid_end] = std::ranges::unique(orders,
+            [component_types](auto const lhs, auto const rhs)
+            {
+                return get_type_name_hash(component_types[lhs]) == get_type_name_hash(component_types[rhs]);
+            });
+        // mark the removed duplicate components` order as invalid value
+        std::ranges::for_each(invalid_begin, invalid_end, [](auto& order) { order = invalid_index_value(); });
 
+        component_count = std::ranges::distance(orders.begin(), invalid_begin);
         return archetype_include_components_impl(archetype, component_count, component_types, include_orders);
     }
 
@@ -224,7 +243,7 @@ namespace punk
         }
 
         virtual archetype_ptr archetype_include_components_impl(archetype_ptr const& archetype, 
-            size_t component_count, type_info_t const** component_types, size_t* include_orders) override
+            size_t component_count, type_info_t const** component_types, uint32_t* include_orders) override
         {
             auto const current_archetype_component_count = archetype->component_types.size();
             auto const new_archetype_components_count = current_archetype_component_count + component_count;
@@ -235,33 +254,31 @@ namespace punk
                 component_infos_ptr + new_archetype_components_count
             };
 
-            // TODO ... return orders
-            auto* orders_ptr = PUNK_ALLOCA(size_t, component_count);
-            std::ranges::subrange orders{ orders_ptr, orders_ptr + component_count };
-            std::ranges::generate(orders, [index{ 0u }]() mutable { return index++; });
-            std::ranges::stable_sort(orders,
-                [=](auto const l_index, auto const r_index)
-                {
-                    return get_type_name_hash(component_types[l_index]) < get_type_name_hash(component_types[r_index]);
-                });
-
-            size_t i = 0, j = 0, index = 0;
+            std::ranges::subrange orders{ include_orders, include_orders + component_count };
+            uint32_t i = 0, j = 0, index = 0;
             while(i < current_archetype_component_count && j < component_count)
             {
                 auto const* current_component_type = archetype->component_types[i];
                 auto const current_index = orders[j];
                 auto const* current_append_type = component_types[current_index];
 
-                if(get_type_name_hash(current_component_type) < get_type_name_hash(current_append_type))
+                auto const current_hash = get_type_name_hash(current_component_type);
+                auto const append_hash = get_type_name_hash(current_append_type);
+
+                if(current_hash < append_hash)
                 {
                     merge_comp_type_infos[index++] = current_component_type;
                     ++i;
                 }
-                else
+                else if(current_hash > append_hash)
                 {
                     orders[current_index] = index++;
                     merge_comp_type_infos[index] = current_append_type;
                     ++j;
+                }
+                else //(current_hash == append_hash)
+                {
+                    orders[current_index] = invalid_index_value();
                 }
             }
 

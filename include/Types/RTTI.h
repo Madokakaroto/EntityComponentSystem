@@ -210,7 +210,7 @@ namespace punk
 
         // runtime version of interfaces
         archetype_ptr get_or_create_archetype(type_info_t const** component_types, size_t component_count);
-        archetype_ptr archetype_include_components(archetype_ptr const& archetype, size_t component_count, type_info_t const** component_types, size_t* include_orders = nullptr);
+        archetype_ptr archetype_include_components(archetype_ptr const& archetype, size_t component_count, type_info_t const** component_types, uint32_t* include_orders = nullptr);
         archetype_ptr archetype_exclude_components(archetype_ptr const& archetype, type_info_t const** component_types, size_t component_count);
 
         // generic version of interfaces
@@ -269,7 +269,7 @@ namespace punk
     protected:
         virtual archetype_ptr get_or_create_archetype_impl(type_info_t const** sorted_component_types, size_t component_count) = 0;
         virtual archetype_ptr archetype_include_components_impl(archetype_ptr const& archetype, 
-            size_t component_count, type_info_t const** component_types, size_t* include_orders) = 0;
+            size_t component_count, type_info_t const** component_types, uint32_t* include_orders) = 0;
         virtual archetype_ptr archetype_exclude_components_impl(archetype_ptr const& archetype, type_info_t const** component_types, size_t component_count) = 0;
 
     protected:
