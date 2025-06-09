@@ -21,6 +21,7 @@
 #include <ranges>
 #include <bit>
 #include <numeric>
+#include <bitset>
 
 namespace punk
 {

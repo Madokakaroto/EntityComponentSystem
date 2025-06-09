@@ -5,17 +5,20 @@
 
 namespace punk
 {
-    class entity_t
+    // tagged type entity_handle: uint32_t handle value with entity_t
+    using entity_handle = handle<class entity_t, uint32_t>;
+
+    // the entity type
+    class entity_t final
     {
     public:
         using value_type = uint64_t;
         using entity_tag = uint16_t;
         using entity_version = uint16_t;
-        using handle_type = handle<entity_t, uint32_t>;
 
         struct compose_type
         {
-            handle_type     handle;
+            entity_handle   handle;
             entity_tag      tag;
             entity_version  version;
         };
@@ -26,11 +29,19 @@ namespace punk
         union
         {
             value_type      value_;
-            compose_type    composed_value_ = invalid_entity_compose();
+            compose_type    composed_value_;
         };
 
     public:
-        static constexpr entity_t compose(handle_type handle, entity_tag tag = 0, entity_version version = 0)
+        entity_t() = default;
+        ~entity_t() = default;
+        entity_t(entity_t const&) = default;
+        entity_t& operator=(entity_t const&) = default;
+        entity_t(entity_t&&) = default;
+        entity_t& operator=(entity_t&&) = default;
+
+    public:
+        static constexpr entity_t compose(entity_handle handle, entity_tag tag = 0, entity_version version = 0)
         {
             entity_t temp;
             temp.composed_value_ = { handle, tag, version };
@@ -39,7 +50,7 @@ namespace punk
 
         static constexpr entity_t invalid_entity() noexcept
         {
-            return compose(handle_type::invalid_handle());
+            return compose(entity_handle::invalid_handle());
         }
 
         friend constexpr auto operator <=> (entity_t const& lhs, entity_t const& rhs) noexcept
@@ -50,7 +61,7 @@ namespace punk
     private:
         static constexpr compose_type invalid_entity_compose() noexcept
         {
-            return { handle_type::invalid_handle() };
+            return { entity_handle::invalid_handle() };
         }
 
     public:
@@ -64,7 +75,7 @@ namespace punk
             return is_valid();
         }
 
-        constexpr handle_type get_handle() const noexcept
+        constexpr entity_handle get_handle() const noexcept
         {
             return composed_value_.handle;
         }

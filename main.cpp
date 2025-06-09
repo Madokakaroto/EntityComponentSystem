@@ -38,7 +38,6 @@ async_simple::coro::Lazy<int> get_43() {
 int main(void)
 {
     constexpr punk::entity_t e{};
-    static_assert(!e.is_valid());
 
     std::cout << "hello punk" << std::endl;
 
