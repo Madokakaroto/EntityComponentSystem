@@ -10,18 +10,96 @@ namespace punk
     class dynamic_bitset
     {
         static_assert(std::conjunction_v<std::negation<is_bool<Block>>, std::is_unsigned<Block>>);
-    public:
-        // export types
+
+    public: // export types
         using block_type = Block;
         using allocator_type = Allocator;
         using storage_type = std::vector<block_type, allocator_type>;
         using block_width_type = typename storage_type::size_type;
         using size_type = size_t;
-        // export constant
+
+    public: // export constant
         static constexpr block_width_type bits_per_block = static_cast<block_width_type>(std::numeric_limits<block_type>::digits);
         static constexpr size_type npos = (std::numeric_limits<size_type>::max)();
         static constexpr block_type ones = (std::numeric_limits<block_type>::max)();
         static constexpr block_type zeros = 0;
+
+    public: // static functions
+        template <typename CharType>
+        static constexpr CharType zero() noexcept
+        {
+            if constexpr(std::is_same_v<CharType, char>)
+            {
+                return '0';
+            }
+            else
+            {
+                static_assert(std::is_same_v<CharType, wchar_t>);
+                return L'0';
+            }
+        }
+
+        template <typename CharType>
+        static constexpr CharType one() noexcept
+        {
+            if constexpr(std::is_same_v<CharType, char>)
+            {
+                return '1';
+            }
+            else
+            {
+                static_assert(std::is_same_v<CharType, wchar_t>);
+                return L'1';
+            }
+        }
+
+        static constexpr size_type block_index(size_type pos) noexcept
+        {
+            return pos / bits_per_block;
+        }
+
+        static constexpr block_width_type bit_index(size_type pos) noexcept
+        {
+            return static_cast<block_width_type>(pos % bits_per_block);
+        }
+
+        static constexpr block_type bit_mask(size_type pos) noexcept
+        {
+            return block_type{ 1 } >> bit_index(pos);
+        }
+
+        static constexpr block_type bit_mask(size_type begin, size_type end) noexcept
+        {
+            auto mask = end == bits_per_block - 1 ? ones :
+                (block_type{ 1 } << (end + 1)) - 1;
+        }
+
+        static constexpr size_type calc_num_blocks(size_type num_bits) noexcept
+        {
+            auto [q, r] = ldiv(num_bits, bits_per_block);
+            auto const yet_another_block = q == 0 || r != 0;
+            return yet_another_block ? q + 1 : q;
+        }
+
+        static storage_type create_storage_from(uint64_t val, size_type valid_bits, allocator_type const& alloc)
+        {
+            if(val == 0)
+            {
+                return { 1, zeros, alloc };
+            }
+
+            assert(valid_bits == calc_valid_bits(val));
+            auto const num_block = calc_num_blocks(valid_bits);
+            assert(num_block * sizeof(block_type) <= sizeof(uint64_t));
+            storage_type result{ num_block, zeros, alloc };
+            std::memcpy(result.data(), &val, num_block * sizeof(block_type));
+            return result;
+        }
+
+        static constexpr size_type calc_valid_bits(uint64_t val) noexcept
+        {
+            return std::numeric_limits<uint64_t>::digits - std::countl_zero(val);
+        }
 
     private:
         size_type       num_bits_;
@@ -275,6 +353,16 @@ namespace punk
                 result += static_cast<size_type>(std::popcount(storage_.back()));
             }
             return result;
+        }
+
+        size_type find_first() const noexcept
+        {
+            return size_type{ 0 };
+        }
+
+        size_type find_next(size_type pos) const noexcept
+        {
+            return size_type{ 0 };
         }
 
         block_type* data() noexcept
@@ -554,61 +642,6 @@ namespace punk
         }
 
     private: // implementations
-        static constexpr size_type calc_num_blocks(size_type num_bits) noexcept
-        {
-            auto [q, r] = ldiv(num_bits, bits_per_block);
-            auto const yet_another_block = q == 0 || r != 0;
-            return yet_another_block ? q + 1 : q;
-        }
-
-        static storage_type create_storage_from(uint64_t val, size_type valid_bits, allocator_type const& alloc)
-        {
-            if(val == 0)
-            {
-                return { 1, zeros, alloc };
-            }
-
-            assert(valid_bits == calc_valid_bits(val));
-            auto const num_block = calc_num_blocks(valid_bits);
-            assert(num_block * sizeof(block_type) <= sizeof(uint64_t));
-            storage_type result{ num_block, zeros, alloc };
-            std::memcpy(result.data(), &val, num_block * sizeof(block_type));
-            return result;
-        }
-
-        static constexpr size_type calc_valid_bits(uint64_t val) noexcept
-        {
-            return std::numeric_limits<uint64_t>::digits - std::countl_zero(val);
-        }
-
-        template <typename CharType>
-        static constexpr CharType zero() noexcept
-        {
-            if constexpr(std::is_same_v<CharType, char>)
-            {
-                return '0';
-            }
-            else
-            {
-                static_assert(std::is_same_v<CharType, wchar_t>);
-                return L'0';
-            }
-        }
-
-        template <typename CharType>
-        static constexpr CharType one() noexcept
-        {
-            if constexpr(std::is_same_v<CharType, char>)
-            {
-                return '1';
-            }
-            else
-            {
-                static_assert(std::is_same_v<CharType, wchar_t>);
-                return L'1';
-            }
-        }
-
         template <typename StrType, typename CharType = typename StrType::value_type>
         void init_from_string(
             StrType const& str,
@@ -651,28 +684,7 @@ namespace punk
                 }
             }
         }
-
-        static constexpr size_type block_index(size_type pos) noexcept
-        {
-            return pos / bits_per_block;
-        }
-
-        static constexpr block_width_type bit_index(size_type pos) noexcept
-        {
-            return static_cast<block_width_type>(pos % bits_per_block);
-        }
-
-        static constexpr block_type bit_mask(size_type pos) noexcept
-        {
-            return block_type{ 1 } >> bit_index(pos);
-        }
-
-        static constexpr block_type bit_mask(size_type begin, size_type end) noexcept
-        {
-            auto mask = end == bits_per_block - 1 ? ones :
-                (block_type{ 1 } << (end + 1)) - 1;
-        }
-
+        
         bool test_impl(size_type pos) const
         {
             auto const block_idx = block_index(pos);
